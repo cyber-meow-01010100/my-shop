@@ -207,7 +207,8 @@
 
 <script src="../js/db.js"></script>
 <script src="js/admin-auth.js"></script>
-<script src="js/admin-l<script>
+<script src="js/admin-layout.js"></script>
+<script>
 AdminAuth.guard();
 document.addEventListener('DOMContentLoaded', () => {
   renderAdminLayout('Products', 'Manage your catalogue');
@@ -543,26 +544,36 @@ async function saveProduct() {
   };
   
   const editId = document.getElementById('edit-id').value;
+  const btn = document.getElementById('save-product-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
   try {
+    let res;
     if (editId) {
-      await fetch('/api/products.php?id=' + editId, {
+      res = await fetch('/api/products.php?id=' + editId, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      adminToast('Product updated successfully ✓');
     } else {
-      await fetch('/api/products.php', {
+      res = await fetch('/api/products.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      adminToast('Product added successfully ✓');
     }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Server error (${res.status})`);
+    }
+    adminToast(editId ? 'Product updated successfully ✓' : 'Product added successfully ✓');
     closeModal('product-modal');
     await reload();
   } catch (e) {
-    adminToast('Failed to save product', 'error');
+    adminToast('Failed to save product: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = editId ? 'Save Changes' : 'Save Product';
   }
 }
 

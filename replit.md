@@ -5,14 +5,16 @@ Premium organic spices, tea, coffee and honey eCommerce site — sourced from Sr
 ## Stack
 
 - **Frontend**: HTML5, Vanilla CSS, Vanilla JavaScript
-- **Backend**: PHP 8.2 (built-in server)
-- **Database**: SQLite (`database.sqlite`, auto-created on first run)
+- **Backend**: Node.js + Express (`server.js`)
+- **Storage**: JSON file (`data/products.json`)
 - **Charts**: Chart.js (CDN, admin only)
 - **Fonts**: Google Fonts (Fraunces, Inter, IBM Plex Mono)
 
 ## How to run
 
-The workflow `Start application` runs `php -S 0.0.0.0:5000` from the project root. The PHP built-in server handles both static files and the API endpoints under `/api/`.
+The workflow `Start application` runs `node server.js`. Express serves static files and handles all API routes on port 5000.
+
+The legacy PHP files in `/api/` are no longer used — all API logic lives in `server.js`.
 
 ## Key URLs
 
