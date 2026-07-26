@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products — Alchimia Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="css/admin.css">
+<style>
+.product-row-thumb {
+  width: 44px; height: 44px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #e4ead9, #cfd9c4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.stock-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .72rem; font-weight: 600;
+  padding: 3px 9px; border-radius: 20px;
+}
+.stock-ok   { background: rgba(34,197,94,.12);  color: #22c55e; }
+.stock-low  { background: rgba(245,158,11,.12); color: #f59e0b; }
+.stock-out  { background: rgba(239,68,68,.12);  color: #ef4444; }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.tag-input-wrap { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  padding: .5rem; background: rgba(255,255,255,.05); border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm); min-height: 42px; cursor: text; }
+.tag-chip { background: rgba(74,222,128,.15); color: var(--admin-accent);
+  padding: 2px 10px; border-radius: 20px; font-size: .75rem; display: flex; align-items: center; gap: 5px; }
+.tag-chip button { background: none; color: inherit; font-size: .85rem; padding: 0; line-height: 1; }
+.tag-input { background: none; border: none; outline: none; color: var(--admin-text);
+  font-size: .85rem; min-width: 80px; flex: 1; }
+</style>
+</head>
+<body>
+<div class="admin-main">
+  <div class="admin-content">
+
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Products</h1>
+        <p id="product-count-label">Loading products…</p>
+      </div>
+      <div class="page-header-actions">
+        <button class="btn btn-secondary" onclick="exportProducts()">⬇ Export CSV</button>
+        <button class="btn btn-primary" onclick="openAddModal()">+ Add Product</button>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search-input" placeholder="Search products…" oninput="renderTable()">
+      </div>
+      <select class="filter-select" id="cat-filter" onchange="renderTable()">
+        <option value="">All Categories</option>
+      </select>
+      <select class="filter-select" id="status-filter" onchange="renderTable()">
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <select class="filter-select" id="stock-filter" onchange="renderTable()">
+        <option value="">All Stock</option>
+        <option value="low">Low Stock (&lt;15)</option>
+        <option value="out">Out of Stock</option>
+      </select>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card" style="padding:0;">
+      <div class="table-wrap">
+        <table id="products-table">
+          <thead>
+            <tr>
+              <th style="width:44px;"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th>
+              <th>Product</th>
+              <th>SKU</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="products-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--admin-muted);">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bulk actions bar -->
+    <div id="bulk-bar" style="display:none;margin-top:12px;padding:12px 16px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:var(--radius);display:flex;align-items:center;gap:12px;">
+      <span id="selected-count" style="font-size:.85rem;color:var(--admin-accent);font-weight:600;"></span>
+      <button class="btn btn-danger btn-sm" onclick="bulkDelete()">Delete Selected</button>
+      <button class="btn btn-secondary btn-sm" onclick="bulkToggleStatus(false)">Deactivate</button>
+      <button class="btn btn-secondary btn-sm" onclick="bulkToggleStatus(true)">Activate</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add/Edit Product Modal -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Add Product</div>
+      <button class="modal-close" onclick="closeModal('product-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <div class="modal-grid">
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Product Name *</label>
+          <input type="text" class="form-control" id="f-name" placeholder="e.g. Ceylon Cinnamon Quills" required>
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select class="form-control" id="f-category"></select>
+        </div>
+        <div class="form-group">
+          <label>SKU</label>
+          <input type="text" class="form-control" id="f-sku" placeholder="ALK-P001">
+        </div>
+        <div class="form-group">
+          <label>Price (USD) *</label>
+          <input type="number" class="form-control" id="f-price" placeholder="14.00" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label>Sale / Old Price</label>
+          <input type="number" class="form-control" id="f-old-price" placeholder="Leave blank if no sale" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label>Stock Quantity *</label>
+          <input type="number" class="form-control" id="f-stock" placeholder="50" min="0">
+        </div>
+        <div class="form-group">
+          <label>Unit</label>
+          <input type="text" class="form-control" id="f-unit" placeholder="100g, 3 pods, 30ml…">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Origin</label>
+          <input type="text" class="form-control" id="f-origin" placeholder="Matale, Sri Lanka">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Short Description *</label>
+          <textarea class="form-control" id="f-desc" rows="2" placeholder="Brief product description shown on cards…"></textarea>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Full Details</label>
+          <textarea class="form-control" id="f-details" rows="4" placeholder="Detailed product description shown on product page…"></textarea>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Product Image</label>
+          <input type="file" class="form-control" id="f-image" accept="image/*">
+          <img id="f-image-preview" style="margin-top:10px;max-width:80px;border-radius:4px;display:none;" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Tags <span style="color:var(--admin-muted);font-size:.72rem;">(press Enter or comma to add)</span></label>
+          <div class="tag-input-wrap" id="tag-wrap" onclick="document.getElementById('tag-raw-input').focus()">
+            <input type="text" class="tag-input" id="tag-raw-input" placeholder="organic, ceylon…">
+          </div>
+          <input type="hidden" id="f-tags">
+        </div>
+        <div class="form-group">
+          <label>Featured Product</label>
+          <label class="toggle" style="margin-top:8px;">
+            <input type="checkbox" id="f-featured">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label>Active / Visible</label>
+          <label class="toggle" style="margin-top:8px;">
+            <input type="checkbox" id="f-active" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('product-modal')">Cancel</button>
+      <button class="btn btn-primary" id="save-product-btn" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">Delete Product</div>
+      <button class="modal-close" onclick="closeModal('delete-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--admin-muted);">Are you sure you want to delete <strong id="delete-name" style="color:var(--admin-text);"></strong>? This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-delete-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/db.js"></script>
+<script src="js/admin-auth.js"></script>
+<script src="js/admin-l<script>
+AdminAuth.guard();
+document.addEventListener('DOMContentLoaded', () => {
+  renderAdminLayout('Products', 'Manage your catalogue');
+  initProductsPage();
+});
+
+let allProducts = [];
+let selectedIds = new Set();
+let currentTags = [];
+let uploadedImageUrls = [];
+let pendingImageFile = null;
+
+async function initProductsPage() {
+  await fetchProducts();
+  updateCountLabel();
+  populateCategoryFilter();
+  renderTable();
+  initTagInput();
+  
+  // Image upload listener
+  document.getElementById('f-image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      pendingImageFile = file;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const preview = document.getElementById('f-image-preview');
+        preview.src = evt.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+async function fetchProducts() {
+  try {
+    const res = await fetch('/api/products.php');
+    if (res.ok) {
+      allProducts = await res.json();
+    }
+  } catch (e) {
+    console.error(e);
+    adminToast('Failed to fetch products', 'error');
+  }
+}
+
+function updateCountLabel() {
+  const active = allProducts.filter(p => p.active !== false).length;
+  document.getElementById('product-count-label').textContent =
+    `${allProducts.length} products total — ${active} active`;
+}
+
+function populateCategoryFilter() {
+  const cats = [...new Set(allProducts.map(p => p.category))].filter(Boolean);
+  const el = document.getElementById('cat-filter');
+  el.innerHTML = '<option value="">All Categories</option>' +
+    cats.map(c => `<option>${c}</option>`).join('');
+
+  // Also populate modal category select (allow typing new ones? No, just populate existing or predefined)
+  const defaultCats = ["Spices", "Tea", "Herbal Tea", "Coffee", "Honey", "Wellness", "Essential Oils"];
+  const allCats = [...new Set([...defaultCats, ...cats])];
+  const fCat = document.getElementById('f-category');
+  // Wait, f-category is an input or select? Let's assume input text or select. Let's make it datalist compatible or just select.
+  // The original code used it as an input or select.
+  if (fCat.tagName.toLowerCase() === 'select') {
+     fCat.innerHTML = allCats.map(c => `<option>${c}</option>`).join('');
+  }
+}
+
+function getFiltered() {
+  const search = document.getElementById('search-input').value.trim().toLowerCase();
+  const cat = document.getElementById('cat-filter').value;
+  const status = document.getElementById('status-filter').value;
+  const stock = document.getElementById('stock-filter').value;
+
+  return allProducts.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search) &&
+        !(p.description && p.description.toLowerCase().includes(search)) &&
+        !(p.sku || '').toLowerCase().includes(search)) return false;
+    if (cat && p.category !== cat) return false;
+    if (status === 'active' && p.active === false) return false;
+    if (status === 'inactive' && p.active !== false) return false;
+    if (stock === 'low' && (p.stock === undefined || p.stock >= 15)) return false;
+    if (stock === 'out' && (p.stock === undefined || p.stock > 0)) return false;
+    return true;
+  });
+}
+
+function stockBadge(stock) {
+  if (stock === undefined || stock === null) return '';
+  if (stock === 0) return `<span class="stock-badge stock-out">Out of stock</span>`;
+  if (stock < 15) return `<span class="stock-badge stock-low">⚠ ${stock} left</span>`;
+  return `<span class="stock-badge stock-ok">✓ ${stock}</span>`;
+}
+
+function renderTable() {
+  const filtered = getFiltered();
+  const tbody = document.getElementById('products-tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--admin-muted);">No products match your filters.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(p => {
+      let imageSrc = null;
+      if (p.images && p.images.length > 0) imageSrc = p.images[0];
+      else if (p.image) imageSrc = p.image; // fallback for old data
+
+      const thumbHtml = imageSrc 
+        ? `<img src="${imageSrc}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;">` 
+        : `<div class="product-row-thumb">${p.icon ? getIconEmoji(p.icon) : '📦'}</div>`;
+        
+      return `
+    <tr>
+      <td><input type="checkbox" class="row-cb" data-id="${p.id}" ${selectedIds.has(p.id)?'checked':''}
+          onchange="toggleRowSelect('${p.id}', this.checked)"></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${thumbHtml}
+          <div>
+            <div style="font-weight:600;color:#fff;font-size:.88rem;">${p.name}</div>
+            <div style="font-size:.72rem;color:var(--admin-muted);">${p.unit || ''}</div>
+          </div>
+        </div>
+      </td>
+      <td><code style="font-size:.75rem;color:var(--admin-muted);">${p.sku || '—'}</code></td>
+      <td><span class="badge badge-muted">${p.category}</span></td>
+      <td>
+        <div style="font-weight:600;color:#fff;">$${Number(p.price).toFixed(2)}</div>
+        ${p.discount_price ? `<div style="font-size:.72rem;color:var(--admin-muted);text-decoration:line-through;">$${Number(p.discount_price).toFixed(2)}</div>` : ''}
+      </td>
+      <td>${stockBadge(p.stock)}</td>
+      <td>
+        <span class="badge ${p.active !== false ? 'badge-success' : 'badge-muted'}">
+          ${p.active !== false ? 'Active' : 'Inactive'}
+        </span>
+      </td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="editProduct('${p.id}')" title="Edit">✏️</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="confirmDelete('${p.id}','${p.name.replace(/'/g,"\\'")}') " title="Delete">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `;}).join('');
+  updateBulkBar();
+}
+
+function getIconEmoji(iconName) {
+  const map = { cinnamonQuills:'🌿', teaLeaf:'🍃', coffeeBean:'☕', honeyJar:'🍯', lotusFlower:'🌸', herbalCapsule:'💊', oilDropper:'🧴', peppercorn:'⚫', cardamomPod:'🟢', vanillaPod:'🟤', driedHerb:'🌾', rootRhizome:'🫚', leafBottle:'🌿' };
+  return map[iconName] || '📦';
+}
+
+function toggleSelectAll(cb) {
+  document.querySelectorAll('.row-cb').forEach(el => {
+    el.checked = cb.checked;
+    const id = el.dataset.id;
+    cb.checked ? selectedIds.add(id) : selectedIds.delete(id);
+  });
+  updateBulkBar();
+}
+
+function toggleRowSelect(id, checked) {
+  checked ? selectedIds.add(id) : selectedIds.delete(id);
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  if (!bar) return;
+  if (selectedIds.size > 0) {
+    bar.style.display = 'flex';
+    document.getElementById('selected-count').textContent = `${selectedIds.size} product(s) selected`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+async function bulkDelete() {
+  if (!selectedIds.size) return;
+  if (!confirm(`Delete ${selectedIds.size} product(s)?`)) return;
+  
+  for (let id of selectedIds) {
+    await fetch('/api/products.php?id=' + id, { method: 'DELETE' });
+  }
+  
+  selectedIds.clear();
+  await reload();
+  adminToast('Bulk delete successful ✓');
+}
+
+async function bulkToggleStatus(active) {
+  for (let id of selectedIds) {
+    await fetch('/api/products.php?id=' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active })
+    });
+  }
+  selectedIds.clear();
+  await reload();
+  adminToast('Bulk status updated ✓');
+}
+
+async function reload() {
+  await fetchProducts();
+  updateCountLabel();
+  populateCategoryFilter();
+  renderTable();
+}
+
+/* ---- Add/Edit Modal ---- */
+function openAddModal() {
+  document.getElementById('modal-title').textContent = 'Add Product';
+  document.getElementById('save-product-btn').textContent = 'Add Product';
+  document.getElementById('edit-id').value = '';
+  clearForm();
+  openModal('product-modal');
+}
+
+function editProduct(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('modal-title').textContent = 'Edit Product';
+  document.getElementById('save-product-btn').textContent = 'Save Changes';
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-name').value = p.name || '';
+  if (document.getElementById('f-category').tagName.toLowerCase() === 'select') {
+     document.getElementById('f-category').value = p.category || '';
+  }
+  document.getElementById('f-sku').value = p.sku || '';
+  document.getElementById('f-price').value = p.price || '';
+  document.getElementById('f-old-price').value = p.discount_price || p.oldPrice || '';
+  document.getElementById('f-stock').value = p.stock !== undefined ? p.stock : '';
+  
+  const fUnit = document.getElementById('f-unit');
+  if (fUnit) fUnit.value = p.unit || '';
+  
+  const fOrigin = document.getElementById('f-origin');
+  if (fOrigin) fOrigin.value = p.origin || '';
+  
+  document.getElementById('f-desc').value = p.description || '';
+  
+  const fDetails = document.getElementById('f-details');
+  if (fDetails) fDetails.value = p.details || '';
+  
+  document.getElementById('f-featured').checked = !!p.featured;
+  document.getElementById('f-active').checked = p.active !== false;
+  currentTags = [...(p.tags || [])];
+  renderTags();
+  
+  pendingImageFile = null;
+  uploadedImageUrls = [...(p.images || [])];
+  if (!uploadedImageUrls.length && p.image) {
+    uploadedImageUrls = [p.image]; // migration from old data
+  }
+  
+  const preview = document.getElementById('f-image-preview');
+  if (uploadedImageUrls.length > 0) {
+    preview.src = uploadedImageUrls[0];
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+  
+  openModal('product-modal');
+}
+
+function clearForm() {
+  ['f-name','f-sku','f-price','f-old-price','f-stock','f-unit','f-origin','f-desc','f-details','f-image'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-featured').checked = false;
+  document.getElementById('f-active').checked = true;
+  currentTags = [];
+  renderTags();
+  
+  pendingImageFile = null;
+  uploadedImageUrls = [];
+  document.getElementById('f-image-preview').style.display = 'none';
+}
+
+async function uploadImage() {
+  if (!pendingImageFile) return uploadedImageUrls;
+  const formData = new FormData();
+  formData.append('images', pendingImageFile);
+  
+  try {
+    const res = await fetch('/api/upload.php', {
+      method: 'POST',
+      body: formData
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.filePaths;
+    }
+  } catch (e) {
+    console.error('Upload failed', e);
+  }
+  return uploadedImageUrls;
+}
+
+async function saveProduct() {
+  const name = document.getElementById('f-name').value.trim();
+  const price = parseFloat(document.getElementById('f-price').value);
+  const stock = parseInt(document.getElementById('f-stock').value);
+  if (!name || isNaN(price)) {
+    adminToast('Please fill in required fields (Name, Price)', 'error');
+    return;
+  }
+  
+  const newImageUrls = await uploadImage();
+  const images = newImageUrls.length > 0 ? newImageUrls : uploadedImageUrls;
+
+  const data = {
+    name,
+    category: document.getElementById('f-category').value,
+    sku: document.getElementById('f-sku').value.trim() || undefined,
+    price,
+    discount_price: parseFloat(document.getElementById('f-old-price').value) || undefined,
+    stock: isNaN(stock) ? 0 : stock,
+    unit: document.getElementById('f-unit') ? document.getElementById('f-unit').value.trim() : undefined,
+    origin: document.getElementById('f-origin') ? document.getElementById('f-origin').value.trim() : undefined,
+    description: document.getElementById('f-desc').value.trim(),
+    details: document.getElementById('f-details') ? document.getElementById('f-details').value.trim() : undefined,
+    tags: currentTags,
+    featured: document.getElementById('f-featured').checked,
+    active: document.getElementById('f-active').checked,
+    status: document.getElementById('f-active').checked ? 'published' : 'draft',
+    images: images,
+    icon: 'leafBottle',
+  };
+  
+  const editId = document.getElementById('edit-id').value;
+  try {
+    if (editId) {
+      await fetch('/api/products.php?id=' + editId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      adminToast('Product updated successfully ✓');
+    } else {
+      await fetch('/api/products.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      adminToast('Product added successfully ✓');
+    }
+    closeModal('product-modal');
+    await reload();
+  } catch (e) {
+    adminToast('Failed to save product', 'error');
+  }
+}
+
+/* ---- Tag Input ---- */
+function initTagInput() {
+  const input = document.getElementById('tag-raw-input');
+  if (!input) return;
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = input.value.trim().replace(/,/g,'');
+      if (val && !currentTags.includes(val)) {
+        currentTags.push(val);
+        renderTags();
+      }
+      input.value = '';
+    } else if (e.key === 'Backspace' && !input.value && currentTags.length) {
+      currentTags.pop();
+      renderTags();
+    }
+  });
+}
+
+function renderTags() {
+  const wrap = document.getElementById('tag-wrap');
+  const input = document.getElementById('tag-raw-input');
+  if (!wrap || !input) return;
+  wrap.innerHTML = '';
+  currentTags.forEach((tag, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'tag-chip';
+    chip.innerHTML = `${tag} <button onclick="removeTag(${i})" type="button">×</button>`;
+    wrap.appendChild(chip);
+  });
+  wrap.appendChild(input);
+  document.getElementById('f-tags').value = currentTags.join(',');
+}
+
+function removeTag(i) {
+  currentTags.splice(i, 1);
+  renderTags();
+}
+
+/* ---- Delete ---- */
+let pendingDeleteId = null;
+function confirmDelete(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('delete-name').textContent = name;
+  document.getElementById('confirm-delete-btn').onclick = async () => {
+    try {
+      await fetch('/api/products.php?id=' + pendingDeleteId, { method: 'DELETE' });
+      closeModal('delete-modal');
+      await reload();
+      adminToast('Product deleted');
+    } catch (e) {
+      adminToast('Failed to delete product', 'error');
+    }
+  };
+  openModal('delete-modal');
+}
+
+/* ---- Export CSV ---- */
+function exportProducts() {
+  const rows = [['ID','Name','Category','SKU','Price','Old Price','Stock','Unit','Origin','Active']];
+  allProducts.forEach(p => rows.push([
+    p.id, p.name, p.category, p.sku||'', p.price, p.discount_price||p.oldPrice||'',
+    p.stock||0, p.unit||'', p.origin||'', p.active!==false?'Yes':'No'
+  ]));
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='alchimia-products.csv'; a.click();
+  URL.revokeObjectURL(url);
+  adminToast('Products exported ✓');
+}
+</script>
+</body>
+</html>

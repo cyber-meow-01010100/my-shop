@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reviews — Alchimia Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+<div class="admin-main">
+  <div class="admin-content">
+
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Reviews</h1>
+        <p>Moderate customer reviews</p>
+      </div>
+      <div class="page-header-actions">
+        <span id="pending-label" class="badge badge-warning" style="font-size:.82rem;padding:6px 14px;"></span>
+      </div>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="tab-bar" id="review-tabs">
+      <button class="tab-btn active" data-filter="all">All Reviews</button>
+      <button class="tab-btn" data-filter="pending">Pending Approval</button>
+      <button class="tab-btn" data-filter="approved">Approved</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-input-wrap" style="max-width:320px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="review-search" placeholder="Search reviews…" oninput="renderReviews()">
+      </div>
+      <select class="filter-select" id="rating-filter" onchange="renderReviews()">
+        <option value="">All Ratings</option>
+        <option value="5">5 Stars</option>
+        <option value="4">4 Stars</option>
+        <option value="3">3 Stars</option>
+        <option value="2">2 Stars</option>
+        <option value="1">1 Star</option>
+      </select>
+    </div>
+
+    <!-- Reviews Table -->
+    <div class="card" style="padding:0;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Author</th>
+              <th>Rating</th>
+              <th>Review</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reviews-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--admin-muted);">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Review Detail Modal -->
+<div class="modal-overlay" id="review-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Review Detail</div>
+      <button class="modal-close" onclick="closeModal('review-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="review-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('review-modal')">Close</button>
+      <button class="btn btn-danger" id="modal-delete-btn">Delete Review</button>
+      <button class="btn btn-primary" id="modal-approve-btn">Approve Review</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/db.js"></script>
+<script src="js/admin-auth.js"></script>
+<script src="js/admin-layout.js"></script>
+<script>
+AdminAuth.guard();
+document.addEventListener('DOMContentLoaded', () => {
+  renderAdminLayout('Reviews', 'Customer reviews');
+  initReviews();
+});
+
+let activeFilter = 'all';
+
+function initReviews() {
+  // Tab switching
+  document.getElementById('review-tabs').addEventListener('click', e => {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    renderReviews();
+  });
+  renderReviews();
+  updatePendingLabel();
+}
+
+function updatePendingLabel() {
+  const count = DB.reviews.getAll().filter(r => !r.approved).length;
+  const el = document.getElementById('pending-label');
+  if (count > 0) {
+    el.textContent = `${count} pending`;
+    el.style.display = 'inline-flex';
+  } else {
+    el.textContent = 'All clear';
+    el.className = 'badge badge-success';
+    el.style.display = 'inline-flex';
+  }
+}
+
+function getFilteredReviews() {
+  let reviews = DB.reviews.getAll();
+  const search = document.getElementById('review-search').value.trim().toLowerCase();
+  const rating = document.getElementById('rating-filter').value;
+
+  if (activeFilter === 'pending') reviews = reviews.filter(r => !r.approved);
+  else if (activeFilter === 'approved') reviews = reviews.filter(r => r.approved);
+
+  if (search) reviews = reviews.filter(r =>
+    r.author.toLowerCase().includes(search) ||
+    r.productName.toLowerCase().includes(search) ||
+    (r.body||'').toLowerCase().includes(search)
+  );
+  if (rating) reviews = reviews.filter(r => r.rating === parseInt(rating));
+  return reviews;
+}
+
+function stars(n) {
+  return '★'.repeat(n) + '☆'.repeat(5-n);
+}
+
+function renderReviews() {
+  const reviews = getFilteredReviews();
+  const tbody = document.getElementById('reviews-tbody');
+  if (!reviews.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--admin-muted);">No reviews found.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = reviews.map(r => `
+    <tr>
+      <td>
+        <div style="font-weight:500;font-size:.85rem;color:#fff;">${r.productName}</div>
+        <div style="font-size:.72rem;color:var(--admin-muted);">${r.productId}</div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="avatar" style="background:linear-gradient(135deg,#4ade80,#22c55e);width:30px;height:30px;font-size:.75rem;">${(r.author||'A').charAt(0)}</div>
+          <div>
+            <div style="font-size:.85rem;font-weight:500;">${r.author}</div>
+            <div style="font-size:.72rem;color:var(--admin-muted);">${r.country||'Customer'}</div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <div style="color:#f59e0b;font-size:.95rem;letter-spacing:2px;">${stars(r.rating)}</div>
+        <div style="font-size:.72rem;color:var(--admin-muted);">${r.rating}/5</div>
+      </td>
+      <td style="max-width:260px;">
+        ${r.title ? `<div style="font-weight:600;font-size:.85rem;color:#fff;margin-bottom:3px;">${r.title}</div>` : ''}
+        <div style="font-size:.8rem;color:var(--admin-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;">${r.body||''}</div>
+      </td>
+      <td>
+        <span class="badge ${r.approved ? 'badge-success' : 'badge-warning'}">
+          ${r.approved ? '✓ Approved' : '⏳ Pending'}
+        </span>
+      </td>
+      <td style="font-size:.8rem;color:var(--admin-muted);">${fmtDate(r.createdAt)}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="viewReview('${r.id}')">View</button>
+          ${!r.approved ? `<button class="btn btn-primary btn-sm" onclick="approveReview('${r.id}')">Approve</button>` : ''}
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteReview('${r.id}')" title="Delete">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function viewReview(id) {
+  const r = DB.reviews.getAll().find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('review-modal-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <div class="avatar" style="background:linear-gradient(135deg,#4ade80,#22c55e);">${(r.author||'A').charAt(0)}</div>
+      <div>
+        <div style="font-weight:600;color:#fff;">${r.author}</div>
+        <div style="font-size:.78rem;color:var(--admin-muted);">${r.country||'Customer'} · ${fmtDate(r.createdAt)}</div>
+      </div>
+      <span class="badge ${r.approved ? 'badge-success' : 'badge-warning'}" style="margin-left:auto;">
+        ${r.approved ? 'Approved' : 'Pending'}
+      </span>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:.78rem;color:var(--admin-muted);margin-bottom:4px;">Product</div>
+      <div style="font-weight:500;">${r.productName}</div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="color:#f59e0b;font-size:1.1rem;letter-spacing:3px;">${stars(r.rating)}</div>
+    </div>
+    ${r.title ? `<div style="font-weight:700;font-size:1rem;color:#fff;margin-bottom:8px;">${r.title}</div>` : ''}
+    <div style="font-size:.9rem;color:var(--admin-muted);line-height:1.7;">${r.body||''}</div>
+  `;
+  document.getElementById('modal-approve-btn').style.display = r.approved ? 'none' : '';
+  document.getElementById('modal-approve-btn').onclick = () => { approveReview(id); closeModal('review-modal'); };
+  document.getElementById('modal-delete-btn').onclick = () => { deleteReview(id); closeModal('review-modal'); };
+  openModal('review-modal');
+}
+
+function approveReview(id) {
+  DB.reviews.approve(id);
+  adminToast('Review approved ✓');
+  renderReviews();
+  updatePendingLabel();
+}
+
+function deleteReview(id) {
+  if (!confirm('Delete this review?')) return;
+  DB.reviews.delete(id);
+  adminToast('Review deleted');
+  renderReviews();
+  updatePendingLabel();
+}
+</script>
+</body>
+</html>

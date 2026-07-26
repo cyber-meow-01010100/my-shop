@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Cart — Buy Alchimia</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo"><span class="mark">Buy</span>Alchimia</a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Shop</a></li>
+        <li><a href="index.html#story">Our Story</a></li>
+        <li><a href="index.html#faq">FAQ</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" id="search-trigger" title="Search" type="button">🔍</button>
+      <a href="index.html#wishlist" class="icon-btn" title="Wishlist" style="position:relative;">
+        ♡<span class="cart-count wishlist-count" style="background:#d43f6a;">0</span>
+      </a>
+      <a href="login.html" class="icon-btn" id="account-link" title="Account">👤</a>
+      <a href="cart.html" class="icon-btn" title="Cart">
+        🧺<span class="cart-count" id="cart-count">0</span>
+      </a>
+      <button class="mobile-toggle" aria-label="Menu"><span class="bar"></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="search-overlay" id="search-overlay">
+  <div class="search-box">
+    <form style="flex:1;display:flex;"><input type="search" placeholder="Search cinnamon, honey, tea…" autocomplete="off"></form>
+    <button type="button" title="Close">✕</button>
+  </div>
+</div>
+
+<div class="nav-drawer" id="nav-drawer">
+  <div class="nav-drawer-overlay"></div>
+  <nav class="nav-drawer-panel">
+    <a href="index.html">Home</a>
+    <a href="products.html">Shop</a>
+    <a href="index.html#story">Our Story</a>
+    <a href="index.html#faq">FAQ</a>
+    <a href="index.html#contact">Contact</a>
+    <a href="login.html">Account</a>
+    <a href="cart.html">Cart</a>
+  </nav>
+</div>
+
+<div class="page-head container">
+  <span class="eyebrow">Step 1 of 2</span>
+  <h1>Your cart</h1>
+</div>
+
+<section style="padding-top:10px;">
+  <div class="container" id="cart-root"></div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 Buy Alchimia. All rights reserved.</span>
+      <span>Made with care, close to the source.</span>
+    </div>
+  </div>
+</footer>
+
+<a class="whatsapp-fab" href="https://wa.me/94712345678" target="_blank" rel="noopener" title="Chat on WhatsApp">💬</a>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/db.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(async function initCart(){
+  const root = document.getElementById("cart-root");
+  const products = await fetchProducts();
+
+  function render(){
+    const cart = Cart.get();
+    if (!cart.length){
+      root.innerHTML = `
+        <div class="empty-state">
+          <h3>Your cart is empty</h3>
+          <p>Nothing here yet — go find something good.</p>
+          <a href="products.html" class="btn-primary">Browse products</a>
+        </div>`;
+      return;
+    }
+
+    const lines = cart.map(c => {
+      const p = products.find(pr => pr.id === c.id);
+      return p ? { ...p, qty: c.qty } : null;
+    }).filter(Boolean);
+
+    const subtotal = lines.reduce((s, l) => s + l.price * l.qty, 0);
+    const settings = typeof DB !== 'undefined' ? DB.settings.get() : {};
+    const freeThreshold = settings.freeShippingThreshold || 75;
+    const shippingCost = settings.defaultShippingCost || 9;
+    const shipping = subtotal > 0 ? (subtotal >= freeThreshold ? 0 : shippingCost) : 0;
+    let discount = 0;
+    let appliedCoupon = window._appliedCoupon || null;
+    if (appliedCoupon) {
+      if (appliedCoupon.type === 'percent') discount = subtotal * (appliedCoupon.value / 100);
+      else discount = Math.min(appliedCoupon.value, subtotal);
+    }
+    const total = subtotal + shipping - discount;
+
+    root.innerHTML = `
+      <div class="cart-layout">
+        <div class="cart-list">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="font-family:var(--font-display);font-size:1.1rem;">${lines.length} item${lines.length!==1?'s':''} in your cart</h3>
+            <a href="products.html" style="font-size:.82rem;color:var(--forest);font-family:var(--font-mono);">+ Add more</a>
+          </div>
+          ${lines.map(l => `
+            <div class="cart-row" data-id="${l.id}">
+              <div class="cart-thumb">${window.ALCHIMIA_ICONS[l.icon] || ""}</div>
+              <div>
+                <div class="cart-name">${l.name}</div>
+                <div class="cart-sub">${l.unit} · ${formatPrice(l.price)} each</div>
+                <button type="button" class="move-wish-btn" style="font-size:.72rem;color:var(--forest);background:none;border:none;cursor:pointer;padding:4px 0;text-decoration:underline;">Move to Wishlist</button>
+              </div>
+              <div class="qty-box">
+                <button type="button" class="qty-dec">−</button>
+                <span>${l.qty}</span>
+                <button type="button" class="qty-inc">+</button>
+              </div>
+              <div class="row-price">${formatPrice(l.price * l.qty)}</div>
+              <button type="button" class="remove-btn">Remove</button>
+            </div>
+          `).join("")}
+        </div>
+        <div class="summary-card">
+          <h3 style="margin-bottom:18px;">Order summary</h3>
+          <div class="summary-row"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div>
+          <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? '<span style="color:var(--forest);font-weight:600;">FREE 🎉</span>' : formatPrice(shipping)}</span></div>
+          ${discount > 0 ? `<div class="summary-row" style="color:var(--forest);"><span>Discount (${appliedCoupon.code})</span><span>-${formatPrice(discount)}</span></div>` : ''}
+          <div class="summary-row total"><span>Total</span><span>${formatPrice(total)}</span></div>
+
+          <!-- Coupon code -->
+          <div style="margin:16px 0;padding-top:14px;border-top:1px solid var(--paper-line);">
+            <div style="font-size:.8rem;font-weight:500;color:var(--forest-dark);margin-bottom:8px;">Have a coupon?</div>
+            <div class="coupon-row">
+              <input type="text" class="coupon-input" id="coupon-input" placeholder="WELCOME10" ${appliedCoupon?'disabled':''}>
+              <button class="btn-outline" id="coupon-btn" style="white-space:nowrap;padding:.65rem 1rem;font-size:.82rem;">${appliedCoupon?'Remove':'Apply'}</button>
+            </div>
+            <div id="coupon-msg"></div>
+          </div>
+
+          <a href="checkout.html" class="btn-gold btn-block" style="margin-top:16px;padding:1rem;font-size:1rem;">Proceed to Checkout →</a>
+          <a href="products.html" class="btn-outline btn-block" style="margin-top:10px;">Continue Shopping</a>
+          <div style="margin-top:14px;font-size:.75rem;color:#9b9385;text-align:center;">
+            🚚 Estimated delivery: 6–12 business days<br>
+            ${subtotal < freeThreshold ? `<span style="color:var(--forest);">Add ${formatPrice(freeThreshold - subtotal)} more for FREE shipping!</span>` : '<span style="color:var(--forest);">You qualify for free shipping! 🎉</span>'}
+          </div>
+        </div>
+      </div>
+    `;
+
+    root.querySelectorAll(".cart-row").forEach(row => {
+      const id = row.dataset.id;
+      row.querySelector(".qty-inc").onclick = () => {
+        const item = Cart.get().find(c => c.id === id);
+        Cart.updateQty(id, (item ? item.qty : 0) + 1);
+        render();
+      };
+      row.querySelector(".qty-dec").onclick = () => {
+        const item = Cart.get().find(c => c.id === id);
+        Cart.updateQty(id, (item ? item.qty : 1) - 1);
+        render();
+      };
+      row.querySelector(".remove-btn").onclick = () => {
+        Cart.remove(id);
+        showToast("Removed from cart");
+        render();
+      };
+      const moveWish = row.querySelector(".move-wish-btn");
+      if (moveWish) moveWish.onclick = () => {
+        if (typeof Wishlist !== 'undefined') Wishlist.toggle(id);
+        Cart.remove(id);
+        showToast("Moved to wishlist ♥");
+        render();
+      };
+    });
+
+    // Coupon
+    const couponInput = document.getElementById('coupon-input');
+    const couponBtn = document.getElementById('coupon-btn');
+    const couponMsg = document.getElementById('coupon-msg');
+    if (couponBtn) {
+      couponBtn.onclick = () => {
+        if (window._appliedCoupon) {
+          window._appliedCoupon = null;
+          render();
+          return;
+        }
+        const code = (couponInput ? couponInput.value.trim() : '').toUpperCase();
+        if (!code) return;
+        if (typeof DB !== 'undefined') {
+          const lines2 = Cart.get().map(c => { const p = products.find(pr => pr.id === c.id); return p ? {...p, qty: c.qty} : null; }).filter(Boolean);
+          const sub2 = lines2.reduce((s, l) => s + l.price * l.qty, 0);
+          const result = DB.coupons.apply(code, sub2);
+          if (result.valid) {
+            window._appliedCoupon = { code, type: result.type, value: result.value };
+            couponMsg.innerHTML = `<div class="coupon-msg valid">✓ Coupon applied! You save ${result.type==='percent'?result.value+'%':'$'+result.value}</div>`;
+            render();
+          } else {
+            couponMsg.innerHTML = `<div class="coupon-msg invalid">${result.error}</div>`;
+          }
+        } else {
+          couponMsg.innerHTML = `<div class="coupon-msg invalid">Could not validate coupon.</div>`;
+        }
+      };
+    }
+  }
+
+  render();
+})();
+</script>
+<script src="js/animations.js"></script>
+</body>
+</html>

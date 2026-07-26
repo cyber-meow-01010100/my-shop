@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media Library — Alchimia Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="css/admin.css">
+<style>
+  /* ---- Media Grid ---- */
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .media-card {
+    background: var(--admin-card-alt);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s ease;
+    position: relative;
+  }
+  .media-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+    border-color: rgba(74,222,128,.3);
+  }
+  .media-thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+    background: rgba(255,255,255,.04);
+  }
+  .media-thumb-placeholder {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    background: rgba(255,255,255,.04);
+    color: var(--admin-muted);
+  }
+  .media-info {
+    padding: 10px 12px 12px;
+  }
+  .media-filename {
+    font-size: .75rem;
+    font-weight: 500;
+    color: var(--admin-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+  .media-meta {
+    font-size: .7rem;
+    color: var(--admin-muted);
+  }
+  .media-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .media-actions .btn {
+    flex: 1;
+    justify-content: center;
+    font-size: .72rem;
+    padding: .3rem .5rem;
+  }
+  /* Selection overlay */
+  .media-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--admin-accent);
+    color: #000;
+    font-weight: 700;
+    font-size: .85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* Upload progress */
+  .upload-progress {
+    height: 3px;
+    background: rgba(255,255,255,.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 12px;
+  }
+  .upload-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--admin-accent), #22c55e);
+    border-radius: 2px;
+    transition: width .2s ease;
+    width: 0%;
+  }
+  /* Drop zone */
+  .drop-zone-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .drop-zone-icon {
+    width: 48px; height: 48px;
+    opacity: .4;
+    margin-bottom: 4px;
+  }
+  /* Stats bar */
+  .media-stats-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 14px 20px;
+    background: rgba(255,255,255,.03);
+    border-radius: var(--radius);
+    border: 1px solid var(--admin-border);
+    margin-bottom: 20px;
+    font-size: .82rem;
+    color: var(--admin-muted);
+  }
+  .media-stats-bar strong { color: var(--admin-text); }
+  /* Image preview modal */
+  .preview-img {
+    max-width: 100%;
+    max-height: 60vh;
+    border-radius: var(--radius);
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="admin-main">
+  <div class="admin-content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Media Library</h1>
+        <p>Uploaded files — images stored as base64 in browser storage</p>
+      </div>
+      <div class="page-header-actions">
+        <button class="btn btn-secondary" id="select-mode-btn" onclick="toggleSelectMode()">☑️ Select</button>
+        <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+          ⬆️ Upload Files
+        </button>
+        <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFileInput(this)">
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="media-stats-bar">
+      <span>Total: <strong id="stat-count">0</strong> files</span>
+      <span style="height:16px;width:1px;background:var(--admin-border);"></span>
+      <span>Est. size: <strong id="stat-size">0 KB</strong></span>
+      <span style="height:16px;width:1px;background:var(--admin-border);"></span>
+      <span style="font-size:.75rem;">Images are stored as base64 in localStorage</span>
+    </div>
+
+    <!-- Drop Zone -->
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="drop-zone-inner">
+        <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/>
+        </svg>
+        <strong style="font-size:.95rem;">Drop images here or click to browse</strong>
+        <span style="font-size:.8rem;">Supports JPG, PNG, GIF, WebP, SVG</span>
+      </div>
+      <div class="upload-progress" id="upload-progress" style="display:none;">
+        <div class="upload-progress-bar" id="upload-bar"></div>
+      </div>
+    </div>
+
+    <!-- Bulk actions bar (hidden by default) -->
+    <div id="bulk-bar" style="display:none;margin-top:16px;padding:12px 16px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:var(--radius);display:none;align-items:center;justify-content:space-between;">
+      <span id="bulk-count" style="font-size:.85rem;color:var(--admin-text);"></span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="clearSelection()">Cancel</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSelected()">🗑️ Delete Selected</button>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar" style="margin-top:20px;">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="media-search" placeholder="Search by filename…" oninput="renderGrid()">
+      </div>
+      <select class="filter-select" id="sort-media" onchange="renderGrid()">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="name">Name A–Z</option>
+      </select>
+    </div>
+
+    <!-- Media Grid -->
+    <div id="media-grid" class="media-grid"></div>
+
+    <!-- Empty state -->
+    <div id="media-empty" style="display:none;">
+      <div class="empty-state" style="padding:80px 20px;">
+        <div style="font-size:3rem;margin-bottom:12px;">🖼️</div>
+        <h3>No media files yet</h3>
+        <p>Upload images using the drop zone above or by clicking "Upload Files".</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== PREVIEW MODAL ===================== -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="preview-filename">Image Preview</div>
+      <button class="modal-close" onclick="closeModal('preview-modal')">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <img id="preview-img" class="preview-img" src="" alt="Preview">
+      <div style="margin-top:16px;">
+        <div style="font-size:.75rem;color:var(--admin-muted);margin-bottom:8px;">URL / Data URI (first 80 chars)</div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid var(--admin-border);border-radius:var(--radius-sm);padding:10px 14px;font-family:var(--mono);font-size:.72rem;color:var(--admin-muted);word-break:break-all;text-align:left;" id="preview-url"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('preview-modal')">Close</button>
+      <button class="btn btn-primary" id="preview-copy-btn">📋 Copy URL</button>
+      <button class="btn btn-danger" id="preview-delete-btn">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DELETE CONFIRM MODAL ===================== -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="width:min(420px,100%);">
+    <div class="modal-header">
+      <div class="modal-title">Delete Image</div>
+      <button class="modal-close" onclick="closeModal('delete-modal')">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;padding:24px 26px;">
+      <div style="font-size:2.5rem;margin-bottom:12px;">🗑️</div>
+      <p style="color:var(--admin-muted);font-size:.9rem;">Delete <strong id="del-fname" style="color:var(--admin-text);"></strong>? This cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-del-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/db.js"></script>
+<script src="js/admin-auth.js"></script>
+<script src="js/admin-layout.js"></script>
+<script>
+/* ============================================================
+   MEDIA LIBRARY PAGE
+   ============================================================ */
+
+let allMedia = [];
+let selectMode = false;
+let selectedIds = new Set();
+
+document.addEventListener('DOMContentLoaded', () => {
+  AdminAuth.guard();
+  renderAdminLayout('Media Library', 'Uploaded files');
+  loadMedia();
+  initDropZone();
+});
+
+function loadMedia() {
+  allMedia = DB.media.getAll();
+  renderGrid();
+  updateStats();
+}
+
+/* ---- Stats ---- */
+function updateStats() {
+  const count = allMedia.length;
+  const totalChars = allMedia.reduce((s, m) => s + (m.src||'').length, 0);
+  const kb = (totalChars * 0.75 / 1024).toFixed(1); // base64 ≈ 75% of raw bytes
+  document.getElementById('stat-count').textContent = count;
+  document.getElementById('stat-size').textContent = kb >= 1024
+    ? (kb/1024).toFixed(2) + ' MB'
+    : kb + ' KB';
+}
+
+/* ---- Render Grid ---- */
+function renderGrid() {
+  const q    = document.getElementById('media-search').value.toLowerCase();
+  const sort = document.getElementById('sort-media').value;
+
+  let items = allMedia.filter(m => !q || (m.filename||'').toLowerCase().includes(q));
+
+  if (sort === 'newest') items.sort((a,b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+  else if (sort === 'oldest') items.sort((a,b) => new Date(a.uploadedAt) - new Date(b.uploadedAt));
+  else items.sort((a,b) => (a.filename||'').localeCompare(b.filename||''));
+
+  const grid  = document.getElementById('media-grid');
+  const empty = document.getElementById('media-empty');
+
+  if (!items.length) {
+    grid.innerHTML  = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = items.map(m => {
+    const isImg = (m.type||'').startsWith('image/') || m.src?.startsWith('data:image');
+    const selected = selectedIds.has(m.id) ? 'selected' : '';
+    return `
+      <div class="media-card ${selected}" id="card-${m.id}" data-id="${m.id}">
+        ${isImg
+          ? `<img class="media-thumb" src="${m.src}" alt="${escHtml(m.filename)}" loading="lazy">`
+          : `<div class="media-thumb-placeholder">📄</div>`
+        }
+        <div class="media-info">
+          <div class="media-filename" title="${escHtml(m.filename)}">${escHtml(m.filename||'Untitled')}</div>
+          <div class="media-meta">${fmtDate(m.uploadedAt)} · ${formatSize(m.size)}</div>
+          <div class="media-actions">
+            <button class="btn btn-secondary" onclick="openPreview('${m.id}')">🔍 View</button>
+            <button class="btn btn-secondary" onclick="copyUrl('${m.id}')">📋 Copy</button>
+            <button class="btn btn-danger btn-icon" onclick="confirmDelete('${m.id}','${escHtml(m.filename||'').replace(/'/g,"\\'")}')">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Re-attach click for select mode
+  if (selectMode) attachSelectListeners();
+}
+
+/* ---- Select Mode ---- */
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  const btn = document.getElementById('select-mode-btn');
+  btn.textContent = selectMode ? '✕ Cancel Select' : '☑️ Select';
+  btn.className   = selectMode ? 'btn btn-warning' : 'btn btn-secondary';
+  if (!selectMode) clearSelection();
+  else attachSelectListeners();
+}
+
+function attachSelectListeners() {
+  document.querySelectorAll('.media-card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.onclick = (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      const id = card.dataset.id;
+      if (selectedIds.has(id)) { selectedIds.delete(id); card.classList.remove('selected'); }
+      else { selectedIds.add(id); card.classList.add('selected'); }
+      updateBulkBar();
+    };
+  });
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  if (selectedIds.size > 0 && selectMode) {
+    bar.style.display = 'flex';
+    document.getElementById('bulk-count').textContent = `${selectedIds.size} item${selectedIds.size>1?'s':''} selected`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function clearSelection() {
+  selectedIds.clear();
+  selectMode = false;
+  document.getElementById('select-mode-btn').textContent = '☑️ Select';
+  document.getElementById('select-mode-btn').className = 'btn btn-secondary';
+  document.getElementById('bulk-bar').style.display = 'none';
+  renderGrid();
+}
+
+function deleteSelected() {
+  if (!selectedIds.size) return;
+  if (!confirm(`Delete ${selectedIds.size} file(s)? This cannot be undone.`)) return;
+  selectedIds.forEach(id => DB.media.delete(id));
+  adminToast(`${selectedIds.size} file(s) deleted.`, 'success');
+  clearSelection();
+  allMedia = DB.media.getAll();
+  renderGrid();
+  updateStats();
+}
+
+/* ---- File Upload ---- */
+function handleFileInput(input) {
+  if (!input.files.length) return;
+  uploadFiles(Array.from(input.files));
+  input.value = ''; // reset for re-upload
+}
+
+function uploadFiles(files) {
+  const allowed = ['image/jpeg','image/png','image/gif','image/webp','image/svg+xml'];
+  const valid   = files.filter(f => allowed.includes(f.type));
+  if (!valid.length) {
+    adminToast('No valid image files selected (JPG, PNG, GIF, WebP, SVG).', 'error');
+    return;
+  }
+
+  const progressWrap = document.getElementById('upload-progress');
+  const progressBar  = document.getElementById('upload-bar');
+  progressWrap.style.display = 'block';
+
+  let done = 0;
+  valid.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      DB.media.add({
+        filename: file.name,
+        type: file.type,
+        size: file.size,
+        src: e.target.result,
+      });
+      done++;
+      progressBar.style.width = (done / valid.length * 100) + '%';
+      if (done === valid.length) {
+        setTimeout(() => {
+          progressWrap.style.display = 'none';
+          progressBar.style.width = '0%';
+          allMedia = DB.media.getAll();
+          renderGrid();
+          updateStats();
+          adminToast(`${done} file${done>1?'s':''} uploaded successfully.`, 'success');
+        }, 400);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---- Drop Zone ---- */
+function initDropZone() {
+  const zone = document.getElementById('drop-zone');
+
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    const files = Array.from(e.dataTransfer.files);
+    uploadFiles(files);
+  });
+
+  // Also allow full-page drop
+  document.addEventListener('dragover', (e) => e.preventDefault());
+  document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (!e.dataTransfer.files.length) return;
+    uploadFiles(Array.from(e.dataTransfer.files));
+  });
+}
+
+/* ---- Preview ---- */
+function openPreview(id) {
+  const m = allMedia.find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('preview-filename').textContent = m.filename || 'Image Preview';
+  document.getElementById('preview-img').src = m.src || '';
+  document.getElementById('preview-url').textContent = (m.src||'').substring(0, 120) + (m.src?.length > 120 ? '…' : '');
+  document.getElementById('preview-copy-btn').onclick = () => copyUrl(id);
+  document.getElementById('preview-delete-btn').onclick = () => {
+    closeModal('preview-modal');
+    confirmDelete(id, m.filename||'this file');
+  };
+  openModal('preview-modal');
+}
+
+/* ---- Copy URL ---- */
+function copyUrl(id) {
+  const m = allMedia.find(x => x.id === id);
+  if (!m) return;
+  navigator.clipboard.writeText(m.src||'').then(() => {
+    adminToast('URL copied to clipboard!', 'success');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = m.src || '';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    adminToast('URL copied!', 'success');
+  });
+}
+
+/* ---- Delete ---- */
+function confirmDelete(id, filename) {
+  document.getElementById('del-fname').textContent = `"${filename}"`;
+  document.getElementById('confirm-del-btn').onclick = () => {
+    DB.media.delete(id);
+    allMedia = DB.media.getAll();
+    renderGrid();
+    updateStats();
+    closeModal('delete-modal');
+    adminToast('File deleted.', 'success');
+  };
+  openModal('delete-modal');
+}
+
+/* ---- Helpers ---- */
+function formatSize(bytes) {
+  if (!bytes) return '—';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(2) + ' MB';
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+</body>
+</html>

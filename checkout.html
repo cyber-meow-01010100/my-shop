@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — Buy Alchimia</title>
+<meta name="description" content="Secure checkout for Buy Alchimia organic products.">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+
+<a class="skip-link" href="#checkout-root">Skip to checkout</a>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo"><span class="mark">Buy</span>Alchimia</a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Shop</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <a href="login.html" class="icon-btn" id="account-link" title="Account">👤</a>
+      <a href="cart.html" class="icon-btn" title="Cart">
+        🧺<span class="cart-count" id="cart-count">0</span>
+      </a>
+      <button class="mobile-toggle" aria-label="Menu"><span class="bar"></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="nav-drawer" id="nav-drawer">
+  <div class="nav-drawer-overlay"></div>
+  <nav class="nav-drawer-panel">
+    <a href="index.html">Home</a>
+    <a href="products.html">Shop</a>
+    <a href="cart.html">Cart</a>
+    <a href="login.html">Account</a>
+  </nav>
+</div>
+
+<div class="page-head container">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+    <a href="cart.html" style="color:var(--forest);font-size:.85rem;font-family:var(--font-mono);">← Back to cart</a>
+  </div>
+  <span class="eyebrow">Secure Checkout</span>
+  <h1>Complete your order</h1>
+  <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap;">
+    <span style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:#5c6656;"><span>🔒</span> SSL Encrypted</span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:#5c6656;"><span>✅</span> Verified Seller</span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:#5c6656;"><span>🚚</span> Worldwide Shipping</span>
+  </div>
+</div>
+
+<section style="padding-top:10px;">
+  <div class="container checkout-grid" id="checkout-root">
+
+    <div>
+      <div class="form-card">
+        <h3>Shipping details</h3>
+        <form id="shipping-form">
+          <div class="form-row">
+            <div class="field"><label>Full name *</label><input type="text" id="cf-name" required placeholder="Maria Johnson"></div>
+            <div class="field"><label>Email *</label><input type="email" id="cf-email" required placeholder="you@example.com"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Phone</label><input type="tel" id="cf-phone" placeholder="+1 555 000 0000"></div>
+            <div class="field"><label>Country *</label>
+              <select id="cf-country" style="width:100%;padding:.8rem 1rem;border:1px solid var(--paper-line);border-radius:var(--radius);font-family:var(--font-body);background:var(--parchment);">
+                <option value="">Select country…</option>
+                <option>United States</option>
+                <option>Canada</option>
+                <option>United Kingdom</option>
+                <option>Australia</option>
+                <option>Germany</option>
+                <option>France</option>
+                <option>Italy</option>
+                <option>Netherlands</option>
+                <option>Spain</option>
+                <option>Japan</option>
+                <option>Singapore</option>
+                <option>New Zealand</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>City *</label><input type="text" id="cf-city" required placeholder="Toronto"></div>
+            <div class="field"><label>Postal Code</label><input type="text" id="cf-zip" placeholder="M5A 1A1"></div>
+          </div>
+          <div class="field"><label>Address *</label><input type="text" id="cf-address" required placeholder="123 Maple Street, Apt 4B"></div>
+
+          <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--paper-line);">
+            <label style="display:flex;align-items:center;gap:10px;font-size:.88rem;cursor:pointer;">
+              <input type="checkbox" id="cf-newsletter" checked style="width:16px;height:16px;">
+              Subscribe to harvest updates &amp; special offers
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="form-card" style="margin-top:24px;">
+        <h3>Payment method</h3>
+        <div class="pay-tabs">
+          <button type="button" class="pay-tab active" data-tab="card">💳 Card</button>
+          <button type="button" class="pay-tab" data-tab="paypal">🅿️ PayPal</button>
+        </div>
+
+        <div class="pay-panel active" id="panel-card">
+          <div id="card-element-container">
+            <div id="card-element"></div>
+          </div>
+          <p class="pay-note">Secured by Stripe. Your card details never touch our server.</p>
+          <button class="btn-primary btn-block" id="pay-card-btn" style="margin-top:16px;padding:1rem;font-size:1rem;">
+            Place Order &amp; Pay
+          </button>
+        </div>
+
+        <div class="pay-panel" id="panel-paypal">
+          <div id="paypal-button-container"></div>
+          <p class="pay-note">You'll be redirected to PayPal to complete payment securely.</p>
+          <button class="btn-primary btn-block" id="pay-paypal-btn" style="margin-top:16px;padding:1rem;font-size:1rem;">
+            Continue to PayPal
+          </button>
+        </div>
+
+        <div id="payment-status"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="summary-card" id="order-summary">
+        <h3 style="margin-bottom:16px;">Order summary</h3>
+        <div id="order-lines"></div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--paper-line);">
+          <div class="summary-row" id="row-subtotal"><span>Subtotal</span><span id="val-subtotal">—</span></div>
+          <div class="summary-row" id="row-shipping"><span>Shipping</span><span id="val-shipping">—</span></div>
+          <div class="summary-row" id="row-discount" style="display:none;color:var(--forest);"><span>Discount</span><span id="val-discount">—</span></div>
+          <div class="summary-row total"><span>Total</span><span id="val-total">—</span></div>
+        </div>
+        <div style="margin-top:14px;font-size:.78rem;color:#9b9385;text-align:center;padding:10px;background:var(--sage-pale);border-radius:var(--radius);">
+          🚚 Estimated delivery: <strong>6–12 business days</strong>
+        </div>
+      </div>
+
+      <!-- Trust section -->
+      <div style="margin-top:16px;padding:16px;background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-card);">
+        <div style="display:flex;gap:14px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;font-size:.78rem;color:#5c6656;">
+            <span style="font-size:1.1rem;">🔒</span> Secure checkout
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:.78rem;color:#5c6656;">
+            <span style="font-size:1.1rem;">↩️</span> 30-day returns
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:.78rem;color:#5c6656;">
+            <span style="font-size:1.1rem;">🌱</span> Certified organic
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="trust-badge" style="color:var(--forest-dark);border-color:var(--paper-line);">VISA</span>
+          <span class="trust-badge" style="color:var(--forest-dark);border-color:var(--paper-line);">Mastercard</span>
+          <span class="trust-badge" style="color:var(--forest-dark);border-color:var(--paper-line);">PayPal</span>
+          <span class="trust-badge" style="color:var(--forest-dark);border-color:var(--paper-line);">🔒 SSL</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 Buy Alchimia. All rights reserved.</span>
+      <span>Made with care, close to the source.</span>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/db.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/checkout.js"></script>
+<script src="js/animations.js"></script>
+<script>
+/* Enhanced order placement — saves to DB */
+(function patchCheckout() {
+  // Override the place order action to save to DB
+  window.addEventListener("alchimia:orderPlaced", (e) => {
+    const { items, shipping, total, subtotal, coupon, discount, paymentMethod } = e.detail || {};
+    const nameEl    = document.getElementById("cf-name");
+    const emailEl   = document.getElementById("cf-email");
+    const countryEl = document.getElementById("cf-country");
+    const addrEl    = document.getElementById("cf-address");
+    const cityEl    = document.getElementById("cf-city");
+    const zipEl     = document.getElementById("cf-zip");
+    const newsEl    = document.getElementById("cf-newsletter");
+
+    if (!nameEl) return;
+    const order = {
+      customer: {
+        name:    nameEl.value,
+        email:   emailEl.value,
+        country: countryEl.value,
+      },
+      address: `${addrEl.value}, ${cityEl.value} ${(zipEl ? zipEl.value : "")}, ${countryEl.value}`.trim(),
+      items:   items || [],
+      subtotal: subtotal || 0,
+      shipping: shipping || 0,
+      discount: discount || 0,
+      total:    total || 0,
+      coupon:   coupon || null,
+      paymentMethod: paymentMethod || "card",
+      trackingNumber: null,
+    };
+    if (typeof DB !== "undefined") {
+      DB.orders.add(order);
+      if (newsEl && newsEl.checked && emailEl.value) {
+        DB.newsletter.subscribe(emailEl.value, nameEl.value);
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
+

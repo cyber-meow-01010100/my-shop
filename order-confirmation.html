@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Confirmed — Buy Alchimia</title>
+<meta name="description" content="Thank you for your order! Your organic products from Sri Lanka are being prepared.">
+<link rel="stylesheet" href="css/style.css">
+<style>
+.confirm-wrap {
+  min-height: 100vh;
+  background: linear-gradient(155deg, #e8f5e9 0%, var(--parchment) 60%);
+  display: flex;
+  flex-direction: column;
+}
+.confirm-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+}
+.confirm-card {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 8px 48px rgba(38,50,56,.1);
+  padding: 48px 44px;
+  width: min(600px, 100%);
+  text-align: center;
+  animation: fadeInUp .6s ease both;
+}
+@keyframes fadeInUp {
+  from { opacity:0; transform: translateY(20px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.confirm-icon {
+  width: 88px; height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.6rem;
+  margin: 0 auto 24px;
+  animation: popIn .5s .2s var(--ease) both;
+}
+@keyframes popIn {
+  0%   { transform: scale(0); opacity:0; }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); opacity:1; }
+}
+.confirm-card h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--forest-dark);
+  margin-bottom: 8px;
+}
+.confirm-card .order-id {
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  color: #9b9385;
+  margin-bottom: 24px;
+}
+.confirm-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 28px 0;
+}
+.confirm-step {
+  background: var(--sage-pale);
+  border-radius: var(--radius);
+  padding: 16px 12px;
+  font-size: .8rem;
+}
+.confirm-step .step-icon { font-size: 1.4rem; margin-bottom: 6px; }
+.confirm-step .step-label { font-weight: 600; color: var(--forest-dark); margin-bottom: 2px; }
+.confirm-step .step-sub { color: #9b9385; font-size: .72rem; }
+.confirm-divider {
+  height: 1px;
+  background: var(--paper-line);
+  margin: 24px 0;
+}
+.confirm-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  text-align: left;
+  flex-wrap: wrap;
+}
+.confirm-info-block { flex: 1; min-width: 140px; }
+.confirm-info-block .info-label { font-size: .72rem; color: #9b9385; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+.confirm-info-block .info-val { font-size: .9rem; font-weight: 500; color: var(--ink); }
+@media (max-width: 560px) {
+  .confirm-card { padding: 32px 22px; }
+  .confirm-steps { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body class="confirm-wrap">
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo"><span class="mark">Buy</span>Alchimia</a>
+    <nav><ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="products.html">Shop</a></li>
+    </ul></nav>
+    <div class="header-actions">
+      <a href="login.html" class="icon-btn" id="account-link" title="Account">👤</a>
+      <a href="cart.html" class="icon-btn" title="Cart">🧺<span class="cart-count" id="cart-count">0</span></a>
+    </div>
+  </div>
+</header>
+
+<main class="confirm-main">
+  <div class="confirm-card">
+    <div class="confirm-icon">✅</div>
+    <h1>Order Confirmed!</h1>
+    <p class="order-id" id="order-id-display">Order #ALK-000000</p>
+    <p style="color:#5c6656;max-width:44ch;margin:0 auto 20px;">Thank you for your order! We're preparing your premium organic products with care and will dispatch them soon.</p>
+
+    <div class="confirm-steps">
+      <div class="confirm-step">
+        <div class="step-icon">📦</div>
+        <div class="step-label">Order Received</div>
+        <div class="step-sub">Just now</div>
+      </div>
+      <div class="confirm-step">
+        <div class="step-icon">🌿</div>
+        <div class="step-label">Packing</div>
+        <div class="step-sub">1–2 business days</div>
+      </div>
+      <div class="confirm-step">
+        <div class="step-icon">🚚</div>
+        <div class="step-label">On its way</div>
+        <div class="step-sub">6–12 business days</div>
+      </div>
+    </div>
+
+    <div class="confirm-divider"></div>
+
+    <div class="confirm-info-row" id="order-details-row">
+      <div class="confirm-info-block">
+        <div class="info-label">Shipping to</div>
+        <div class="info-val" id="conf-shipping-to">—</div>
+      </div>
+      <div class="confirm-info-block">
+        <div class="info-label">Payment</div>
+        <div class="info-val" id="conf-payment">—</div>
+      </div>
+      <div class="confirm-info-block">
+        <div class="info-label">Order Total</div>
+        <div class="info-val" id="conf-total">—</div>
+      </div>
+    </div>
+
+    <div class="confirm-divider"></div>
+
+    <div id="order-items-list" style="text-align:left;margin-bottom:20px;"></div>
+
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
+      <a href="products.html" class="btn-primary" style="padding:.85rem 2rem;">Continue Shopping 🛍️</a>
+      <a href="index.html" class="btn-outline" style="padding:.85rem 2rem;">Back to Home</a>
+    </div>
+
+    <div style="margin-top:24px;padding:16px;background:var(--sage-pale);border-radius:var(--radius);font-size:.82rem;color:var(--forest-dark);">
+      📧 A confirmation email will be sent to your inbox.<br>
+      💬 Questions? <a href="https://wa.me/94712345678" style="color:var(--forest);" target="_blank" rel="noopener">Chat with us on WhatsApp</a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 Buy Alchimia. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/db.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/auth.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Get last order from DB
+  if (typeof DB === 'undefined') return;
+  const orders = DB.orders.getAll();
+  const lastOrder = orders.length ? orders[orders.length - 1] : null;
+
+  if (lastOrder) {
+    const orderId = lastOrder.id ? lastOrder.id.slice(-6).toUpperCase() : '------';
+    document.getElementById('order-id-display').textContent = `Order #ALK-${orderId}`;
+    document.getElementById('conf-shipping-to').textContent = lastOrder.customer?.country || lastOrder.address || '—';
+    document.getElementById('conf-payment').textContent = lastOrder.paymentMethod === 'paypal' ? '🅿️ PayPal' : '💳 Credit Card';
+    document.getElementById('conf-total').textContent = `$${Number(lastOrder.total || 0).toFixed(2)}`;
+
+    const items = lastOrder.items || [];
+    if (items.length) {
+      document.getElementById('order-items-list').innerHTML = `
+        <div style="font-size:.78rem;color:#9b9385;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Items ordered</div>
+        ${items.map(item => `
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--paper-line);font-size:.88rem;">
+            <span>${item.name || item.id} × ${item.qty}</span>
+            <span style="font-weight:600;">$${Number((item.price || 0) * (item.qty || 1)).toFixed(2)}</span>
+          </div>
+        `).join('')}
+      `;
+    }
+  } else {
+    // Fallback — show generic confirmation
+    document.getElementById('order-id-display').textContent = `Order #ALK-${Math.random().toString(36).slice(2,8).toUpperCase()}`;
+    document.getElementById('conf-shipping-to').textContent = 'Your address';
+    document.getElementById('conf-payment').textContent = '💳 Credit Card';
+    document.getElementById('conf-total').textContent = '—';
+  }
+
+  // Clear the cart after confirmation
+  localStorage.removeItem('alchimia_cart');
+  const badge = document.getElementById('cart-count');
+  if (badge) badge.textContent = '0';
+});
+</script>
+<script src="js/animations.js"></script>
+</body>
+</html>

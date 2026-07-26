@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customers — Alchimia Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="css/admin.css">
+<style>
+/* ── Customer Avatar Colours ─────────────────────────────── */
+.cust-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .9rem;
+  color: #fff; flex-shrink: 0;
+  letter-spacing: -.01em;
+}
+
+/* ── Country Flag Chip ───────────────────────────────────── */
+.country-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .8rem; color: var(--admin-muted);
+}
+
+/* ── Spent Cell ──────────────────────────────────────────── */
+.spent-value {
+  font-family: var(--mono);
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--admin-accent);
+}
+
+/* ── Customer Card in modal ──────────────────────────────── */
+.cust-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 26px;
+  background: var(--admin-card-alt);
+  border-bottom: 1px solid var(--admin-border);
+}
+.cust-profile-avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; font-weight: 800;
+  color: #fff; flex-shrink: 0;
+  border: 3px solid rgba(255,255,255,.1);
+}
+.cust-profile-name {
+  font-size: 1.1rem; font-weight: 700; color: #fff; line-height: 1.2;
+}
+.cust-profile-email {
+  font-size: .82rem; color: var(--admin-muted); margin-top: 3px;
+}
+.cust-profile-since {
+  font-size: .75rem; color: var(--admin-muted); margin-top: 6px;
+}
+
+/* ── Modal stat pills ────────────────────────────────────── */
+.modal-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin: 20px 0;
+}
+.modal-stat {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  text-align: center;
+}
+.modal-stat-label {
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--admin-muted);
+  margin-bottom: 6px;
+}
+.modal-stat-val {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: var(--mono);
+}
+.modal-stat-val.accent { color: var(--admin-accent); }
+.modal-stat-val.gold   { color: var(--admin-accent2); }
+
+/* ── Contact row ─────────────────────────────────────────── */
+.info-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .85rem; color: var(--admin-muted);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--admin-border);
+}
+.info-row:last-child { border-bottom: none; }
+.info-row strong { color: var(--admin-text); }
+.info-row-icon { font-size: 1rem; width: 22px; text-align: center; flex-shrink: 0; }
+
+/* ── Order History in modal ──────────────────────────────── */
+.section-label {
+  font-size: .72rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--admin-muted);
+  margin-bottom: 12px; margin-top: 22px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::after {
+  content: ''; flex: 1; height: 1px;
+  background: var(--admin-border);
+}
+
+/* ── Empty orders ────────────────────────────────────────── */
+.orders-empty {
+  text-align: center; padding: 28px 16px;
+  color: var(--admin-muted); font-size: .85rem;
+}
+
+/* ── Order status in modal table ─────────────────────────── */
+.status-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.status-dot.delivered  { background: var(--admin-success); }
+.status-dot.shipped    { background: var(--admin-info); }
+.status-dot.processing { background: var(--admin-warning); }
+.status-dot.pending    { background: var(--admin-danger); }
+.status-dot.cancelled  { background: var(--admin-muted); }
+
+/* ── No results ──────────────────────────────────────────── */
+#no-results {
+  display: none;
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--admin-muted);
+  font-size: .9rem;
+}
+
+/* ── Stats grid (3 cols) ─────────────────────────────────── */
+.stats-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 900px) { .stats-grid-3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 500px) { .stats-grid-3 { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .modal-stats-row { grid-template-columns: 1fr 1fr; } }
+
+/* ── Customer name cell ──────────────────────────────────── */
+.cust-name-cell {
+  display: flex; align-items: center; gap: 10px;
+}
+.cust-name-text  { font-weight: 600; color: var(--admin-text); }
+.cust-email-text { font-size: .75rem; color: var(--admin-muted); margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<!-- Main shell -->
+<div class="admin-main">
+  <div class="admin-content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Customers</h1>
+        <p>Customer management &amp; order history overview</p>
+      </div>
+      <div class="page-header-actions">
+        <button class="btn btn-secondary btn-sm" onclick="exportCustomersCSV()" title="Export customer list">
+          &#11015; Export CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-grid-3" id="stats-row">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="Search by name, email or country&hellip;">
+      </div>
+      <select class="filter-select" id="sort-select" title="Sort by">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="spent-desc">Highest spend</option>
+        <option value="spent-asc">Lowest spend</option>
+        <option value="orders-desc">Most orders</option>
+      </select>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="table-wrap" style="border: none;">
+        <table id="customers-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Country</th>
+              <th>Total Orders</th>
+              <th>Total Spent</th>
+              <th>Member Since</th>
+              <th style="text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="customers-tbody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+        <div id="no-results">
+          <div style="font-size:2.2rem;margin-bottom:10px;">&#128269;</div>
+          No customers match your search.
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer count -->
+    <div style="font-size:.78rem;color:var(--admin-muted);margin-top:12px;padding:0 2px;" id="result-count"></div>
+
+  </div><!-- /.admin-content -->
+</div><!-- /.admin-main -->
+
+
+<!-- ============================================================
+     CUSTOMER DETAIL MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="customer-modal">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="modal-customer-name">
+
+    <!-- Profile Header -->
+    <div class="cust-profile-header" id="modal-profile-header">
+      <!-- JS fills this -->
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body" id="modal-body-content">
+      <!-- JS fills this -->
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('customer-modal')">Close</button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+<script src="../js/db.js"></script>
+<script src="js/admin-auth.js"></script>
+<script src="js/admin-layout.js"></script>
+
+<script>
+/* ── Guard ──────────────────────────────────────────────── */
+AdminAuth.guard();
+
+/* ── Init layout ────────────────────────────────────────── */
+renderAdminLayout('Customers', 'Customer management');
+
+/* ── Avatar colour palette ──────────────────────────────── */
+const AVATAR_COLORS = [
+  '#2E7D32','#1565C0','#6A1B9A','#AD1457',
+  '#00695C','#E65100','#283593','#4E342E',
+];
+function avatarColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+function initials(name) {
+  return name.split(' ').map(function(w) { return w[0]; }).join('').toUpperCase().slice(0, 2);
+}
+
+/* ── Country flag emoji ─────────────────────────────────── */
+var COUNTRY_FLAGS = {
+  'Canada': '\uD83C\uDDE8\uD83C\uDDE6',
+  'USA': '\uD83C\uDDFA\uD83C\uDDF8',
+  'United States': '\uD83C\uDDFA\uD83C\uDDF8',
+  'Italy': '\uD83C\uDDEE\uD83C\uDDF9',
+  'Australia': '\uD83C\uDDE6\uD83C\uDDFA',
+  'UK': '\uD83C\uDDEC\uD83C\uDDE7',
+  'United Kingdom': '\uD83C\uDDEC\uD83C\uDDE7',
+  'Germany': '\uD83C\uDDE9\uD83C\uDDEA',
+  'France': '\uD83C\uDDEB\uD83C\uDDF7',
+  'Spain': '\uD83C\uDDEA\uD83C\uDDF8',
+  'Japan': '\uD83C\uDDEF\uD83C\uDDF5',
+  'India': '\uD83C\uDDEE\uD83C\uDDF3',
+  'Sri Lanka': '\uD83C\uDDF1\uD83C\uDDF0',
+  'Netherlands': '\uD83C\uDDF3\uD83C\uDDF1',
+  'Brazil': '\uD83C\uDDE7\uD83C\uDDF7',
+};
+function countryFlag(country) {
+  return COUNTRY_FLAGS[country] || '\uD83C\uDF10';
+}
+
+/* ── Status badge ───────────────────────────────────────── */
+function statusBadge(status) {
+  var map = {
+    delivered:  ['badge-success', 'Delivered'],
+    shipped:    ['badge-info',    'Shipped'],
+    processing: ['badge-warning', 'Processing'],
+    pending:    ['badge-danger',  'Pending'],
+    cancelled:  ['badge-muted',   'Cancelled'],
+  };
+  var pair = map[status] || ['badge-muted', status];
+  return '<span class="badge ' + pair[0] + '"><span class="status-dot ' + status + '"></span>' + pair[1] + '</span>';
+}
+
+/* ── Render stats ───────────────────────────────────────── */
+function renderStats(customers) {
+  var totalRev  = customers.reduce(function(s, c) { return s + (c.totalSpent  || 0); }, 0);
+  var totalOrds = customers.reduce(function(s, c) { return s + (c.totalOrders || 0); }, 0);
+  var avgOrder  = totalOrds > 0 ? totalRev / totalOrds : 0;
+
+  var cards = [
+    { color: 'green',  icon: '&#128101;', label: 'Total Customers', value: customers.length,     sub: totalOrds + ' total orders placed' },
+    { color: 'gold',   icon: '&#128176;', label: 'Total Revenue',    value: fmtCurrency(totalRev), sub: 'From all customers' },
+    { color: 'indigo', icon: '&#128202;', label: 'Avg Order Value',  value: fmtCurrency(avgOrder), sub: 'Per order, all time' },
+  ];
+
+  document.getElementById('stats-row').innerHTML = cards.map(function(c) {
+    return '<div class="stat-card ' + c.color + '">' +
+      '<div class="stat-icon">' + c.icon + '</div>' +
+      '<div class="stat-label">' + c.label + '</div>' +
+      '<div class="stat-value">' + c.value + '</div>' +
+      '<div class="stat-change">' + c.sub + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ── Build one table row ────────────────────────────────── */
+function buildRow(c) {
+  var color = avatarColor(c.name);
+  var inits = initials(c.name);
+  var flag  = countryFlag(c.country);
+  var since = fmtDate(c.createdAt);
+
+  return '<tr>' +
+    '<td><div class="cust-name-cell">' +
+      '<div class="cust-avatar" style="background:' + color + ';">' + inits + '</div>' +
+      '<div>' +
+        '<div class="cust-name-text">' + escHtml(c.name) + '</div>' +
+        '<div class="cust-email-text">' + escHtml(c.email || '\u2014') + '</div>' +
+      '</div>' +
+    '</div></td>' +
+    '<td><span class="country-chip">' + flag + ' ' + escHtml(c.country || '\u2014') + '</span></td>' +
+    '<td><span style="font-weight:600;color:var(--admin-text);">' + (c.totalOrders || 0) + '</span></td>' +
+    '<td><span class="spent-value">' + fmtCurrency(c.totalSpent || 0) + '</span></td>' +
+    '<td style="color:var(--admin-muted);font-size:.82rem;">' + since + '</td>' +
+    '<td style="text-align:right;">' +
+      '<button class="btn btn-secondary btn-sm" onclick="openCustomerModal(\'' + c.id + '\')">&#128100; View</button>' +
+    '</td>' +
+  '</tr>';
+}
+
+/* ── Escape HTML helper ─────────────────────────────────── */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ── Render table ───────────────────────────────────────── */
+var allCustomers = [];
+
+function renderTable(customers) {
+  var tbody    = document.getElementById('customers-tbody');
+  var noRes    = document.getElementById('no-results');
+  var countEl  = document.getElementById('result-count');
+
+  if (!customers.length) {
+    tbody.innerHTML = '';
+    noRes.style.display = 'block';
+    countEl.textContent = 'No customers found.';
+    return;
+  }
+
+  noRes.style.display = 'none';
+  tbody.innerHTML = customers.map(buildRow).join('');
+  countEl.textContent = 'Showing ' + customers.length + ' customer' + (customers.length !== 1 ? 's' : '');
+}
+
+/* ── Filter + sort ──────────────────────────────────────── */
+function getFilteredSorted() {
+  var term = document.getElementById('search-input').value.trim().toLowerCase();
+  var sort = document.getElementById('sort-select').value;
+
+  var list = allCustomers.filter(function(c) {
+    if (!term) return true;
+    return (
+      c.name.toLowerCase().includes(term) ||
+      (c.email   || '').toLowerCase().includes(term) ||
+      (c.country || '').toLowerCase().includes(term)
+    );
+  });
+
+  list = list.slice().sort(function(a, b) {
+    if (sort === 'oldest')      return new Date(a.createdAt) - new Date(b.createdAt);
+    if (sort === 'spent-desc')  return (b.totalSpent  || 0) - (a.totalSpent  || 0);
+    if (sort === 'spent-asc')   return (a.totalSpent  || 0) - (b.totalSpent  || 0);
+    if (sort === 'orders-desc') return (b.totalOrders || 0) - (a.totalOrders || 0);
+    return new Date(b.createdAt) - new Date(a.createdAt); // newest
+  });
+
+  return list;
+}
+
+function refreshTable() {
+  renderTable(getFilteredSorted());
+}
+
+/* ── Customer detail modal ──────────────────────────────── */
+function openCustomerModal(id) {
+  var c = allCustomers.find(function(x) { return x.id === id; });
+  if (!c) return;
+
+  var color = avatarColor(c.name);
+  var inits = initials(c.name);
+  var flag  = countryFlag(c.country);
+
+  /* Profile header */
+  document.getElementById('modal-profile-header').innerHTML =
+    '<div class="cust-profile-avatar" style="background:' + color + ';">' + inits + '</div>' +
+    '<div style="flex:1;">' +
+      '<div class="cust-profile-name" id="modal-customer-name">' + escHtml(c.name) + '</div>' +
+      '<div class="cust-profile-email">' + escHtml(c.email || '\u2014') + '</div>' +
+      '<div class="cust-profile-since">Member since ' + fmtDate(c.createdAt) + '</div>' +
+    '</div>' +
+    '<div style="text-align:right;"><span class="badge badge-green">Customer</span></div>';
+
+  /* Stat pills */
+  var avgSpend = (c.totalOrders > 0) ? (c.totalSpent / c.totalOrders) : 0;
+  var statsPills =
+    '<div class="modal-stats-row">' +
+      '<div class="modal-stat"><div class="modal-stat-label">Orders</div><div class="modal-stat-val">' + (c.totalOrders || 0) + '</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-label">Total Spent</div><div class="modal-stat-val gold">' + fmtCurrency(c.totalSpent || 0) + '</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-label">Avg / Order</div><div class="modal-stat-val accent">' + fmtCurrency(avgSpend) + '</div></div>' +
+    '</div>';
+
+  /* Contact info */
+  var contactInfo =
+    '<div class="section-label">Contact Info</div>' +
+    '<div style="background:rgba(255,255,255,.03);border:1px solid var(--admin-border);border-radius:var(--radius);padding:6px 16px;">' +
+      '<div class="info-row"><span class="info-row-icon">&#9993;&#65039;</span><span>Email</span><strong style="margin-left:auto;">' + escHtml(c.email || '\u2014') + '</strong></div>' +
+      '<div class="info-row"><span class="info-row-icon">' + flag + '</span><span>Country</span><strong style="margin-left:auto;">' + escHtml(c.country || '\u2014') + '</strong></div>' +
+      '<div class="info-row"><span class="info-row-icon">&#128197;</span><span>Member Since</span><strong style="margin-left:auto;">' + fmtDate(c.createdAt) + '</strong></div>' +
+    '</div>';
+
+  /* Order history */
+  var orders = DB.orders.getByCustomerEmail(c.email);
+  var orderHistory;
+
+  if (!orders.length) {
+    orderHistory =
+      '<div class="orders-empty">' +
+        '<div style="font-size:2rem;margin-bottom:8px;">&#128230;</div>' +
+        'No orders found for this customer.' +
+      '</div>';
+  } else {
+    var rows = orders.map(function(o) {
+      var itemSummary = (o.items || []).map(function(i) { return escHtml(i.name) + ' &times;' + i.qty; }).join(', ');
+      return '<tr>' +
+        '<td><span style="font-family:var(--mono);font-size:.8rem;color:var(--admin-info);">' + o.id + '</span></td>' +
+        '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8rem;color:var(--admin-muted);">' + itemSummary + '</td>' +
+        '<td>' + statusBadge(o.status) + '</td>' +
+        '<td style="font-family:var(--mono);font-weight:600;color:var(--admin-accent);font-size:.85rem;">' + fmtCurrency(o.total) + '</td>' +
+        '<td style="font-size:.78rem;color:var(--admin-muted);">' + fmtDate(o.createdAt) + '</td>' +
+      '</tr>';
+    }).join('');
+
+    orderHistory =
+      '<div class="table-wrap" style="border-radius:var(--radius);">' +
+        '<table>' +
+          '<thead><tr>' +
+            '<th>Order ID</th>' +
+            '<th>Items</th>' +
+            '<th>Status</th>' +
+            '<th>Total</th>' +
+            '<th>Date</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+      '</div>';
+  }
+
+  /* Assemble body */
+  document.getElementById('modal-body-content').innerHTML =
+    statsPills +
+    contactInfo +
+    '<div class="section-label">Order History <span class="badge badge-muted" style="margin-left:6px;">' + orders.length + '</span></div>' +
+    orderHistory;
+
+  openModal('customer-modal');
+}
+
+/* ── Export CSV ─────────────────────────────────────────── */
+function exportCustomersCSV() {
+  var rows = [['Name','Email','Country','Total Orders','Total Spent','Member Since']];
+  allCustomers.forEach(function(c) {
+    rows.push([
+      c.name,
+      c.email || '',
+      c.country || '',
+      c.totalOrders || 0,
+      (c.totalSpent || 0).toFixed(2),
+      fmtDate(c.createdAt),
+    ]);
+  });
+  var csv = rows.map(function(r) {
+    return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',');
+  }).join('\n');
+  downloadCSV(csv, 'alchimia-customers.csv');
+  adminToast('Customer list exported!', 'success');
+}
+
+/* ── Bootstrap ──────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function() {
+  allCustomers = DB.customers.getAll();
+
+  renderStats(allCustomers);
+  renderTable(
+    allCustomers.slice().sort(function(a, b) {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    })
+  );
+
+  document.getElementById('search-input').addEventListener('input',  refreshTable);
+  document.getElementById('sort-select').addEventListener('change', refreshTable);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — Buy Alchimia</title>
+<meta name="description" content="Sign in or create an account to track your orders from Buy Alchimia.">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+.login-page-wrap {
+  min-height: 100vh;
+  background: linear-gradient(155deg, var(--parchment) 0%, #e8ede0 100%);
+  display: flex;
+  flex-direction: column;
+}
+.login-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+.login-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 48px rgba(38,50,56,.12);
+  padding: 40px 38px;
+  width: min(460px, 100%);
+  animation: fadeInUp .5s ease both;
+}
+@keyframes fadeInUp {
+  from { opacity:0; transform: translateY(16px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* Tab switcher */
+.auth-tabs {
+  display: flex;
+  gap: 0;
+  background: var(--parchment-dark);
+  border-radius: var(--radius);
+  padding: 4px;
+  margin-bottom: 28px;
+}
+.auth-tab {
+  flex: 1;
+  padding: .6rem 1rem;
+  border-radius: calc(var(--radius) - 2px);
+  font-size: .88rem;
+  font-weight: 600;
+  color: #9b9385;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.auth-tab.active {
+  background: var(--white);
+  color: var(--forest-dark);
+  box-shadow: 0 2px 8px rgba(38,50,56,.1);
+}
+
+.auth-panel { display: none; }
+.auth-panel.active { display: block; }
+
+.auth-field {
+  margin-bottom: 14px;
+}
+.auth-field label {
+  display: block;
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--forest-dark);
+  margin-bottom: 5px;
+  font-family: var(--font-mono);
+}
+.auth-field input {
+  width: 100%;
+  padding: .75rem 1rem;
+  border: 1.5px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  font-size: .9rem;
+  font-family: var(--font-body);
+  background: var(--parchment);
+  transition: border-color .2s ease, box-shadow .2s ease;
+  outline: none;
+}
+.auth-field input:focus {
+  border-color: var(--forest);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(46,125,50,.1);
+}
+.auth-field .field-error {
+  font-size: .75rem;
+  color: var(--error, #c62828);
+  margin-top: 4px;
+  display: none;
+}
+.auth-field input.invalid { border-color: var(--error, #c62828); }
+
+.auth-form-error {
+  background: #fce4e4;
+  color: #c62828;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: .82rem;
+  margin-bottom: 14px;
+  display: none;
+}
+.auth-success {
+  background: #e8f5e9;
+  color: var(--forest-dark);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: .82rem;
+  margin-bottom: 14px;
+  display: none;
+}
+
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.auth-divider {
+  text-align: center;
+  font-size: .78rem;
+  color: #9b9385;
+  margin: 18px 0;
+  position: relative;
+  font-family: var(--font-mono);
+}
+.auth-divider::before, .auth-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: var(--paper-line);
+}
+.auth-divider::before { left: 0; }
+.auth-divider::after  { right: 0; }
+
+.auth-foot {
+  text-align: center;
+  font-size: .72rem;
+  color: #9b9385;
+  margin-top: 14px;
+}
+
+/* Signed-in state */
+.signed-in-wrap {
+  text-align: center;
+}
+.user-avatar-large {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, var(--sage), var(--forest));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  overflow: hidden;
+}
+.user-avatar-large img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+@media (max-width: 500px) {
+  .login-card { padding: 28px 20px; }
+  .form-row-2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body class="login-page-wrap">
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo"><span class="mark">Buy</span>Alchimia</a>
+    <nav><ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="products.html">Shop</a></li>
+      <li><a href="cart.html">Cart</a></li>
+    </ul></nav>
+    <div class="header-actions">
+      <a href="cart.html" class="icon-btn" title="Cart">🧺<span class="cart-count" id="cart-count">0</span></a>
+    </div>
+  </div>
+</header>
+
+<main class="login-main">
+
+  <!-- Signed-OUT card -->
+  <div class="login-card" id="signed-out-card">
+    <div style="text-align:center;margin-bottom:24px;">
+      <a href="index.html" class="logo" style="font-size:1.4rem;text-decoration:none;"><span class="mark">Buy</span>Alchimia</a>
+      <p style="font-size:.82rem;color:#9b9385;margin-top:6px;">Track orders • Faster checkout • Wishlist sync</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Create Account</button>
+    </div>
+
+    <!-- Login Panel -->
+    <div class="auth-panel active" id="panel-login">
+      <div class="auth-form-error" id="login-error"></div>
+      <form id="login-form" novalidate>
+        <div class="auth-field">
+          <label for="login-email">Email address</label>
+          <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+          <div class="field-error" id="login-email-err">Please enter a valid email.</div>
+        </div>
+        <div class="auth-field">
+          <label for="login-password">Password</label>
+          <div style="position:relative;">
+            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" style="padding-right:2.8rem;">
+            <button type="button" onclick="togglePwd('login-password')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;color:#9b9385;font-size:1rem;border:none;cursor:pointer;">👁</button>
+          </div>
+          <div class="field-error" id="login-pwd-err">Password required.</div>
+        </div>
+        <button type="submit" class="btn-primary btn-block" style="margin-top:6px;padding:1rem;font-size:.95rem;" id="login-submit-btn">Sign In</button>
+      </form>
+
+      <div class="auth-divider">or sign in with</div>
+      <div id="g_id_signin_container_login" style="display:flex;justify-content:center;"></div>
+
+      <div style="margin-top:16px;text-align:center;">
+        <button onclick="switchTab('register')" style="background:none;border:none;cursor:pointer;font-size:.82rem;color:var(--forest);text-decoration:underline;">Don't have an account? Create one →</button>
+      </div>
+    </div>
+
+    <!-- Register Panel -->
+    <div class="auth-panel" id="panel-register">
+      <div class="auth-form-error" id="reg-error"></div>
+      <div class="auth-success" id="reg-success"></div>
+      <form id="register-form" novalidate>
+        <div class="form-row-2">
+          <div class="auth-field">
+            <label for="reg-first">First name *</label>
+            <input type="text" id="reg-first" placeholder="Maria" autocomplete="given-name">
+          </div>
+          <div class="auth-field">
+            <label for="reg-last">Last name *</label>
+            <input type="text" id="reg-last" placeholder="Johnson" autocomplete="family-name">
+          </div>
+        </div>
+        <div class="auth-field">
+          <label for="reg-email">Email address *</label>
+          <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label for="reg-password">Password * <span style="font-weight:400;color:#9b9385;">(min 8 chars)</span></label>
+          <div style="position:relative;">
+            <input type="password" id="reg-password" placeholder="Choose a strong password" autocomplete="new-password" style="padding-right:2.8rem;">
+            <button type="button" onclick="togglePwd('reg-password')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;color:#9b9385;font-size:1rem;border:none;cursor:pointer;">👁</button>
+          </div>
+        </div>
+        <div class="auth-field">
+          <label for="reg-confirm">Confirm password *</label>
+          <input type="password" id="reg-confirm" placeholder="Repeat password" autocomplete="new-password">
+          <div class="field-error" id="reg-confirm-err">Passwords do not match.</div>
+        </div>
+        <button type="submit" class="btn-primary btn-block" style="margin-top:6px;padding:1rem;font-size:.95rem;" id="reg-submit-btn">Create Account</button>
+      </form>
+
+      <div class="auth-divider">or register with</div>
+      <div id="g_id_signin_container_reg" style="display:flex;justify-content:center;"></div>
+
+      <div style="margin-top:16px;text-align:center;">
+        <button onclick="switchTab('login')" style="background:none;border:none;cursor:pointer;font-size:.82rem;color:var(--forest);text-decoration:underline;">Already have an account? Sign in →</button>
+      </div>
+    </div>
+
+    <p class="auth-foot">By continuing you agree to our <a href="#" style="color:var(--forest);">Terms</a> and <a href="#" style="color:var(--forest);">Privacy Policy</a>.</p>
+    <p class="auth-foot" style="margin-top:6px;">Admin? <a href="admin/index.html" style="color:var(--gold);">Go to Admin Panel ↗</a></p>
+  </div>
+
+  <!-- Signed-IN card -->
+  <div class="login-card" id="signed-in-card" style="display:none;">
+    <div class="signed-in-wrap">
+      <div class="user-avatar-large" id="user-avatar-large">
+        <span id="user-initials">?</span>
+      </div>
+      <h1 id="user-name-h1" style="font-size:1.4rem;margin-bottom:6px;">Welcome!</h1>
+      <p id="user-email-p" style="color:#5c6656;font-size:.88rem;margin-bottom:24px;"></p>
+      <a href="products.html" class="btn-primary btn-block" style="padding:.9rem;font-size:.95rem;">Continue Shopping 🛍️</a>
+      <a href="cart.html" class="btn-outline btn-block" style="margin-top:10px;">View Cart 🧺</a>
+      <button class="btn-outline btn-block" id="logout-btn" style="margin-top:10px;color:#c62828;border-color:#c62828;">Sign Out</button>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 Buy Alchimia. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/auth.js"></script>
+<script>
+
+/* ---- Tab switching ---- */
+function switchTab(tab) {
+  ['login','register'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('panel-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+/* ---- Show/hide password ---- */
+function togglePwd(id) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+/* ---- Auth state ---- */
+function renderAuthState() {
+  const user = Auth.getUser();
+  document.getElementById('signed-out-card').style.display = user ? 'none' : 'block';
+  document.getElementById('signed-in-card').style.display  = user ? 'block' : 'none';
+  if (user) {
+    document.getElementById('user-name-h1').textContent = `Welcome back, ${user.name || 'there'}!`;
+    document.getElementById('user-email-p').textContent = user.email || '';
+    const initEl = document.getElementById('user-initials');
+    if (user.picture) {
+      document.getElementById('user-avatar-large').innerHTML = `<img src="${user.picture}" alt="${user.name}">`;
+    } else {
+      const name = user.name || user.email || '?';
+      initEl.textContent = name.charAt(0).toUpperCase();
+    }
+  } else {
+    // Init Google Sign-In buttons
+    if (typeof initGoogleSignIn === 'function') {
+      initGoogleSignIn('g_id_signin_container_login');
+    }
+  }
+}
+
+/* ---- Email/Password Login ---- */
+document.getElementById('login-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl    = document.getElementById('login-error');
+  const btn      = document.getElementById('login-submit-btn');
+
+  // Basic validation
+  if (!email || !email.includes('@')) {
+    document.getElementById('login-email-err').style.display = 'block';
+    return;
+  }
+  document.getElementById('login-email-err').style.display = 'none';
+
+  if (!password) {
+    document.getElementById('login-pwd-err').style.display = 'block';
+    return;
+  }
+  document.getElementById('login-pwd-err').style.display = 'none';
+
+  btn.textContent = 'Signing in…';
+  btn.disabled = true;
+
+  // Check against registered users in localStorage
+  const users = JSON.parse(localStorage.getItem('alchimia_users') || '[]');
+  const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+  setTimeout(() => {
+    if (!found) {
+      errEl.textContent = 'No account found with that email. Please register.';
+      errEl.style.display = 'block';
+    } else if (found.password !== btoa(password)) {
+      errEl.textContent = 'Incorrect password. Please try again.';
+      errEl.style.display = 'block';
+    } else {
+      // Login success
+      const userData = { name: found.firstName + ' ' + found.lastName, email: found.email, provider: 'email' };
+      localStorage.setItem('alchimia_user', JSON.stringify(userData));
+      errEl.style.display = 'none';
+      showToast('Signed in successfully ✓');
+      setTimeout(() => {
+        const redirect = new URLSearchParams(location.search).get('redirect') || 'index.html';
+        window.location.href = redirect;
+      }, 800);
+    }
+    btn.textContent = 'Sign In';
+    btn.disabled = false;
+  }, 500);
+});
+
+/* ---- Registration ---- */
+document.getElementById('register-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const first    = document.getElementById('reg-first').value.trim();
+  const last     = document.getElementById('reg-last').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm  = document.getElementById('reg-confirm').value;
+  const errEl    = document.getElementById('reg-error');
+  const sucEl    = document.getElementById('reg-success');
+  const btn      = document.getElementById('reg-submit-btn');
+
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+
+  if (!first || !last) { errEl.textContent = 'Please enter your full name.'; errEl.style.display = 'block'; return; }
+  if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return; }
+  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+  if (password !== confirm) {
+    document.getElementById('reg-confirm-err').style.display = 'block';
+    return;
+  }
+  document.getElementById('reg-confirm-err').style.display = 'none';
+
+  // Check existing
+  const users = JSON.parse(localStorage.getItem('alchimia_users') || '[]');
+  if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+    errEl.textContent = 'An account with this email already exists.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Creating account…';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    users.push({ firstName: first, lastName: last, email, password: btoa(password), createdAt: new Date().toISOString() });
+    localStorage.setItem('alchimia_users', JSON.stringify(users));
+
+    // Also add to DB customers
+    if (typeof DB !== 'undefined') {
+      DB.customers.add({ name: first + ' ' + last, email, country: 'Unknown', totalOrders: 0, totalSpent: 0 });
+    }
+
+    sucEl.textContent = `✓ Account created! Welcome, ${first}. You can now sign in.`;
+    sucEl.style.display = 'block';
+    btn.textContent = 'Create Account';
+    btn.disabled = false;
+    document.getElementById('register-form').reset();
+
+    // Auto-switch to login after 1.5s
+    setTimeout(() => switchTab('login'), 1500);
+  }, 600);
+});
+
+/* ---- Logout ---- */
+document.getElementById('logout-btn').addEventListener('click', () => {
+  Auth.logout();
+  showToast('Signed out successfully');
+  renderAuthState();
+});
+
+renderAuthState();
+
+/* ---- Google Sign-In callback (overrides auth.js) ---- */
+window.handleCredentialResponse = function(response) {
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const user = { name: payload.name, email: payload.email, picture: payload.picture, provider: 'google' };
+    localStorage.setItem('alchimia_user', JSON.stringify(user));
+    if (typeof DB !== 'undefined') {
+      const existing = DB.customers.getAll().find(c => c.email === user.email);
+      if (!existing) DB.customers.add({ name: user.name, email: user.email, country: 'Unknown', totalOrders: 0, totalSpent: 0 });
+    }
+    showToast(`Welcome, ${user.name}! ✓`);
+    setTimeout(() => {
+      const redirect = new URLSearchParams(location.search).get('redirect') || 'index.html';
+      window.location.href = redirect;
+    }, 800);
+  } catch(err) { console.error('Google sign-in error', err); }
+};
+</script>
+<script src="js/animations.js"></script>
+</body>
+</html>

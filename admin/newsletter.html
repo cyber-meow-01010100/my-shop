@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Newsletter — Alchimia Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="admin-main">
+  <div class="admin-content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Newsletter</h1>
+        <p>Subscriber management and email list</p>
+      </div>
+      <div class="page-header-actions">
+        <button class="btn btn-secondary" onclick="exportCSV()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+        <button class="btn btn-danger" id="bulk-delete-btn" onclick="bulkDelete()" style="display:none;">
+          🗑️ Delete Selected (<span id="selected-count">0</span>)
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card green">
+        <div class="stat-icon">📧</div>
+        <div class="stat-label">Total Subscribers</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-change up">All time</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-icon">✅</div>
+        <div class="stat-label">Active Subscribers</div>
+        <div class="stat-value" id="stat-active">—</div>
+        <div class="stat-change up">Currently subscribed</div>
+      </div>
+      <div class="stat-card indigo">
+        <div class="stat-icon">📈</div>
+        <div class="stat-label">This Month</div>
+        <div class="stat-value" id="stat-month">—</div>
+        <div class="stat-change up" id="stat-month-label">New sign-ups</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">🚫</div>
+        <div class="stat-label">Unsubscribed</div>
+        <div class="stat-value" id="stat-inactive">—</div>
+        <div class="stat-change" style="color:var(--admin-muted);">Opted out</div>
+      </div>
+    </div>
+
+    <!-- Subscribers Table -->
+    <div class="card" style="padding:0;">
+      <div class="card-header" style="padding:20px 24px 0;">
+        <div>
+          <div class="card-title">Subscribers</div>
+          <div class="card-subtitle" id="sub-count-label">Loading…</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div class="search-input-wrap" style="max-width:260px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-subs" placeholder="Search email or name…" oninput="renderTable()">
+          </div>
+          <select class="filter-select" id="filter-status" onchange="renderTable()">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Unsubscribed</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding:16px 24px 24px;">
+        <!-- Select All bar -->
+        <div id="selection-bar" style="display:none;align-items:center;gap:12px;padding:10px 16px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:var(--radius-sm);margin-bottom:14px;">
+          <input type="checkbox" id="select-all-cb" onchange="toggleSelectAll(this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--admin-accent3);">
+          <span style="font-size:.83rem;color:var(--admin-text);" id="selection-info">Select all visible subscribers</span>
+          <button class="btn btn-danger btn-sm" onclick="bulkDelete()" style="margin-left:auto;">🗑️ Delete Selected</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px;">
+                  <input type="checkbox" id="thead-cb" onchange="toggleSelectAll(this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--admin-accent3);">
+                </th>
+                <th>Email</th>
+                <th>Name</th>
+                <th>Subscribed Date</th>
+                <th style="text-align:center;">Status</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="subs-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--admin-muted);">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="../js/db.js"></script>
+<script src="js/admin-auth.js"></script>
+<script src="js/admin-layout.js"></script>
+<script>
+AdminAuth.guard();
+renderAdminLayout('Newsletter', 'Subscriber management');
+
+let selectedIds = new Set();
+
+/* ── Stats ── */
+function updateStats() {
+  const subs    = DB.newsletter.getAll();
+  const active  = subs.filter(s => s.active).length;
+  const inactive= subs.length - active;
+
+  const now = new Date();
+  const monthSubs = subs.filter(s => {
+    const d = new Date(s.subscribedAt);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  document.getElementById('stat-total').textContent   = subs.length;
+  document.getElementById('stat-active').textContent  = active;
+  document.getElementById('stat-month').textContent   = monthSubs.length;
+  document.getElementById('stat-inactive').textContent= inactive;
+}
+
+/* ── Render table ── */
+function renderTable() {
+  const query  = (document.getElementById('search-subs').value || '').toLowerCase();
+  const status = document.getElementById('filter-status').value;
+  const tbody  = document.getElementById('subs-tbody');
+
+  let subs = DB.newsletter.getAll();
+
+  if (query)  subs = subs.filter(s =>
+    s.email.toLowerCase().includes(query) ||
+    (s.name || '').toLowerCase().includes(query)
+  );
+  if (status === 'active')   subs = subs.filter(s => s.active);
+  if (status === 'inactive') subs = subs.filter(s => !s.active);
+
+  /* Sort: newest first */
+  subs.sort((a, b) => new Date(b.subscribedAt) - new Date(a.subscribedAt));
+
+  document.getElementById('sub-count-label').textContent =
+    `${subs.length} subscriber${subs.length === 1 ? '' : 's'}`;
+
+  if (!subs.length) {
+    tbody.innerHTML = `<tr><td colspan="6">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <h3>No subscribers found</h3>
+        <p>Subscribers will appear here when customers sign up for the newsletter.</p>
+      </div>
+    </td></tr>`;
+    updateSelectionUI();
+    return;
+  }
+
+  tbody.innerHTML = subs.map(s => {
+    const isSelected = selectedIds.has(s.id);
+    const initials   = (s.name || s.email).charAt(0).toUpperCase();
+    const avatarColor= stringToColor(s.email);
+
+    const statusBadge = s.active
+      ? `<span class="badge badge-success">● Active</span>`
+      : `<span class="badge badge-muted">○ Unsubscribed</span>`;
+
+    const daysSince = Math.floor((Date.now() - new Date(s.subscribedAt)) / (1000*60*60*24));
+    const sinceLabel = daysSince === 0 ? 'Today' : daysSince === 1 ? '1 day ago' : `${daysSince}d ago`;
+
+    return `<tr id="row-${s.id}" class="${isSelected ? 'selected-row' : ''}">
+      <td>
+        <input type="checkbox" class="row-cb" data-id="${s.id}" ${isSelected ? 'checked' : ''}
+          onchange="toggleRow('${s.id}', this.checked)"
+          style="width:15px;height:15px;cursor:pointer;accent-color:var(--admin-accent3);">
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="avatar" style="background:${avatarColor};font-size:.8rem;">${initials}</div>
+          <div>
+            <div style="font-weight:500;color:var(--admin-text);">${escHtml(s.email)}</div>
+          </div>
+        </div>
+      </td>
+      <td style="color:var(--admin-muted);">${escHtml(s.name || '—')}</td>
+      <td>
+        <div style="font-size:.83rem;">${fmtDate(s.subscribedAt)}</div>
+        <div style="font-size:.72rem;color:var(--admin-muted);">${sinceLabel}</div>
+      </td>
+      <td style="text-align:center;">${statusBadge}</td>
+      <td style="text-align:right;">
+        <button class="btn btn-danger btn-sm" onclick="deleteSub('${s.id}','${escAttr(s.email)}')">🗑️ Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  updateSelectionUI();
+}
+
+/* ── Selection helpers ── */
+function toggleRow(id, checked) {
+  if (checked) selectedIds.add(id);
+  else selectedIds.delete(id);
+
+  const row = document.getElementById(`row-${id}`);
+  if (row) row.classList.toggle('selected-row', checked);
+
+  updateSelectionUI();
+}
+
+function toggleSelectAll(checked) {
+  document.querySelectorAll('.row-cb').forEach(cb => {
+    const id = cb.dataset.id;
+    cb.checked = checked;
+    if (checked) selectedIds.add(id);
+    else selectedIds.delete(id);
+    const row = document.getElementById(`row-${id}`);
+    if (row) row.classList.toggle('selected-row', checked);
+  });
+  updateSelectionUI();
+}
+
+function updateSelectionUI() {
+  const count = selectedIds.size;
+  const btn   = document.getElementById('bulk-delete-btn');
+  const bar   = document.getElementById('selection-bar');
+  const info  = document.getElementById('selection-info');
+  const sc    = document.getElementById('selected-count');
+
+  if (btn)   btn.style.display   = count > 0 ? 'inline-flex' : 'none';
+  if (bar)   bar.style.display   = count > 0 ? 'flex' : 'none';
+  if (sc)    sc.textContent      = count;
+  if (info)  info.textContent    = `${count} subscriber${count === 1 ? '' : 's'} selected`;
+
+  /* Sync header checkbox */
+  const allCbs  = document.querySelectorAll('.row-cb');
+  const thead   = document.getElementById('thead-cb');
+  if (thead && allCbs.length > 0) {
+    thead.checked       = count === allCbs.length && count > 0;
+    thead.indeterminate = count > 0 && count < allCbs.length;
+  }
+}
+
+/* ── Delete single subscriber ── */
+function deleteSub(id, email) {
+  if (!adminConfirm(`Remove "${email}" from the newsletter list?`)) return;
+  selectedIds.delete(id);
+  DB.newsletter.delete(id);
+  adminToast('Subscriber removed', 'success');
+  updateStats();
+  renderTable();
+}
+
+/* ── Bulk delete ── */
+function bulkDelete() {
+  const count = selectedIds.size;
+  if (!count) return;
+  if (!adminConfirm(`Delete ${count} subscriber${count === 1 ? '' : 's'}? This cannot be undone.`)) return;
+  selectedIds.forEach(id => DB.newsletter.delete(id));
+  selectedIds.clear();
+  adminToast(`${count} subscriber${count === 1 ? '' : 's'} deleted`, 'success');
+  updateStats();
+  renderTable();
+}
+
+/* ── Export CSV ── */
+function exportCSV() {
+  const active = DB.newsletter.getActive();
+  if (!active.length) {
+    adminToast('No active subscribers to export.', 'warning');
+    return;
+  }
+  const csv = DB.newsletter.exportCSV();
+  downloadCSV(csv, `newsletter-subscribers-${new Date().toISOString().slice(0,10)}.csv`);
+  adminToast(`Exported ${active.length} active subscribers`, 'success');
+}
+
+/* ── Colour from string (deterministic pastel) ── */
+function stringToColor(s) {
+  let hash = 0;
+  for (let i = 0; i < s.length; i++) hash = s.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue},50%,32%)`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) { return String(s).replace(/'/g,"\\'"); }
+
+/* ── Styles for selected rows ── */
+const style = document.createElement('style');
+style.textContent = `.selected-row { background: rgba(99,102,241,.07) !important; }`;
+document.head.appendChild(style);
+
+/* ── Init ── */
+updateStats();
+renderTable();
+</script>
+</body>
+</html>

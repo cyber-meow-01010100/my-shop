@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop All Products — Buy Alchimia</title>
+<meta name="description" content="Browse all premium organic spices, tea, coffee, honey and wellness products from Sri Lanka. Free shipping on orders over $75.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo"><span class="mark">Buy</span>Alchimia</a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Shop</a></li>
+        <li><a href="index.html#story">Our Story</a></li>
+        <li><a href="index.html#faq">FAQ</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" id="search-trigger" title="Search" type="button">🔍</button>
+      <a href="index.html#wishlist" class="icon-btn" title="Wishlist" style="position:relative;">
+        ♡<span class="cart-count wishlist-count" style="background:#d43f6a;">0</span>
+      </a>
+      <a href="login.html" class="icon-btn" id="account-link" title="Account">👤</a>
+      <a href="cart.html" class="icon-btn" title="Cart">
+        🧺<span class="cart-count" id="cart-count">0</span>
+      </a>
+      <button class="mobile-toggle" aria-label="Menu"><span class="bar"></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="search-overlay" id="search-overlay">
+  <div class="search-box">
+    <form style="flex:1;display:flex;">
+      <input type="search" placeholder="Search cinnamon, honey, tea…" autocomplete="off">
+    </form>
+    <button type="button" title="Close">✕</button>
+  </div>
+</div>
+
+<div class="nav-drawer" id="nav-drawer">
+  <div class="nav-drawer-overlay"></div>
+  <nav class="nav-drawer-panel">
+    <a href="index.html">Home</a>
+    <a href="products.html">Shop</a>
+    <a href="index.html#story">Our Story</a>
+    <a href="index.html#faq">FAQ</a>
+    <a href="index.html#contact">Contact</a>
+    <a href="login.html">Account</a>
+    <a href="cart.html">Cart</a>
+  </nav>
+</div>
+
+<div class="page-head container reveal">
+  <span class="eyebrow">Full Collection</span>
+  <h1>Shop premium organics</h1>
+  <p style="max-width:56ch;color:#5c6656;">Every item here is sourced directly from small growers in Sri Lanka — filter by category or search to find what you need.</p>
+</div>
+
+<section style="padding-top:20px;">
+  <div class="container">
+    <div style="display:flex; gap:14px; margin-bottom:30px; flex-wrap:wrap; align-items:center; justify-content:space-between;" class="reveal">
+      <div class="category-strip" id="category-strip" style="margin-bottom:0;"></div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input type="search" id="search-input" placeholder="Search products..." style="padding:.75rem 1.1rem;border:1px solid var(--paper-line);border-radius:30px;min-width:200px;font-family:var(--font-body);background:var(--white);">
+        <select id="sort-select" style="padding:.75rem 1rem;border:1px solid var(--paper-line);border-radius:30px;font-family:var(--font-body);background:var(--white);">
+          <option value="default">Sort: Featured</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="name-asc">Name: A–Z</option>
+        </select>
+      </div>
+    </div>
+    <div class="product-grid stagger" id="all-grid"></div>
+    <p id="result-count" style="text-align:center;color:#9b9385;font-size:.82rem;font-family:var(--font-mono);padding:16px 0;"></p>
+    <p id="empty-msg" style="display:none;text-align:center;color:#9b9385;padding:40px 0;">
+      <span style="font-size:2rem;display:block;margin-bottom:12px;">🔍</span>
+      No products match your search.<br>
+      <a href="products.html" style="color:var(--forest);text-decoration:underline;font-size:.9rem;">Clear filters</a>
+    </p>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 Buy Alchimia. All rights reserved.</span>
+      <span>Made with care, close to the source.</span>
+    </div>
+  </div>
+</footer>
+
+<a class="whatsapp-fab" href="https://wa.me/94712345678" target="_blank" rel="noopener" title="Chat on WhatsApp">💬</a>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/db.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/quickview.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(async function initShop(){
+  const grid = document.getElementById("all-grid");
+  const stripEl = document.getElementById("category-strip");
+  const searchInput = document.getElementById("search-input");
+  const sortSelect = document.getElementById("sort-select");
+  const emptyMsg = document.getElementById("empty-msg");
+
+  const products = await fetchProducts();
+  const categories = ["All", ...new Set(products.map(p => p.category))];
+  const params = new URLSearchParams(window.location.search);
+  let activeCat = params.get("category") || "All";
+  if (params.get("q")) searchInput.value = params.get("q");
+
+  stripEl.innerHTML = categories.map(c =>
+    `<button class="cat-chip ${c === activeCat ? "active" : ""}" data-cat="${c}">${c}</button>`
+  ).join("");
+
+  function render(){
+    const term = searchInput.value.trim().toLowerCase();
+    let list = activeCat !== "All" ? products.filter(p => p.category === activeCat) : products.slice();
+    if (term) list = list.filter(p => p.name.toLowerCase().includes(term) || p.description.toLowerCase().includes(term) || (p.tags||[]).some(t => t.toLowerCase().includes(term)));
+
+    switch (sortSelect.value) {
+      case "price-asc":  list.sort((a,b) => a.price - b.price); break;
+      case "price-desc": list.sort((a,b) => b.price - a.price); break;
+      case "name-asc":   list.sort((a,b) => a.name.localeCompare(b.name)); break;
+    }
+
+    const countEl = document.getElementById('result-count');
+    const emptyVisible = list.length === 0;
+    emptyMsg.style.display = emptyVisible ? "block" : "none";
+    if (countEl) countEl.textContent = emptyVisible ? '' : `${list.length} product${list.length !== 1 ? 's' : ''} found`;
+    grid.innerHTML = list.map(p => productCardHTML(p, "reveal-child")).join("");
+    grid.querySelectorAll(".reveal-child").forEach(el => el.classList.add("visible"));
+    bindProductCardEvents(grid, products);
+  }
+
+  stripEl.addEventListener("click", e => {
+    const chip = e.target.closest(".cat-chip");
+    if (!chip) return;
+    stripEl.querySelectorAll(".cat-chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    activeCat = chip.dataset.cat;
+    render();
+  });
+  searchInput.addEventListener("input", render);
+  sortSelect.addEventListener("change", render);
+
+  render();
+})();
+</script>
+<script src="js/animations.js"></script>
+</body>
+</html>

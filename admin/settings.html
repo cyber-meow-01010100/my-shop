@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — Alchimia Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+<div class="admin-main">
+  <div class="admin-content">
+
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Settings</h1>
+        <p>Store configuration and preferences</p>
+      </div>
+    </div>
+
+    <!-- Settings Tabs -->
+    <div class="tab-bar" id="settings-tabs">
+      <button class="tab-btn active" data-tab="general">General</button>
+      <button class="tab-btn" data-tab="shipping">Shipping</button>
+      <button class="tab-btn" data-tab="payments">Payments</button>
+      <button class="tab-btn" data-tab="seo">SEO</button>
+      <button class="tab-btn" data-tab="social">Social</button>
+      <button class="tab-btn" data-tab="security">Security</button>
+      <button class="tab-btn" data-tab="danger">Danger Zone</button>
+    </div>
+
+    <!-- General Settings -->
+    <div class="settings-panel" id="tab-general">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Store Information</div>
+        </div>
+        <div class="form-group">
+          <label>Store Name</label>
+          <input type="text" class="form-control" id="s-storeName">
+        </div>
+        <div class="form-group">
+          <label>Tagline</label>
+          <input type="text" class="form-control" id="s-tagline">
+        </div>
+        <div class="form-group">
+          <label>Contact Email</label>
+          <input type="email" class="form-control" id="s-email">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" class="form-control" id="s-phone">
+          </div>
+          <div class="form-group">
+            <label>WhatsApp Number</label>
+            <input type="text" class="form-control" id="s-whatsapp" placeholder="94712345678">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Business Address</label>
+          <input type="text" class="form-control" id="s-address">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Currency Code</label>
+            <select class="form-control" id="s-currency">
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="AUD">AUD (A$)</option>
+              <option value="CAD">CAD (CA$)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Currency Symbol</label>
+            <input type="text" class="form-control" id="s-currencySymbol" placeholder="$">
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <button class="btn btn-primary" onclick="saveSettings('general')">Save General Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shipping Settings -->
+    <div class="settings-panel" id="tab-shipping" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Shipping Configuration</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Free Shipping Threshold ($)</label>
+            <input type="number" class="form-control" id="s-freeShipping" placeholder="75" min="0">
+          </div>
+          <div class="form-group">
+            <label>Default Shipping Cost ($)</label>
+            <input type="number" class="form-control" id="s-shippingCost" placeholder="9" min="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Estimated Delivery Time</label>
+          <input type="text" class="form-control" id="s-deliveryTime" placeholder="6-12 business days">
+        </div>
+        <div class="form-group">
+          <label>Shipping Zones / Notes</label>
+          <textarea class="form-control" id="s-shippingZones" rows="4" placeholder="USA, Canada, Europe, Australia, Asia-Pacific..."></textarea>
+        </div>
+        <div class="alert alert-info">
+          <span>ℹ️</span>
+          <span>Free shipping is automatically applied at checkout when the cart subtotal exceeds the threshold.</span>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings('shipping')">Save Shipping Settings</button>
+      </div>
+    </div>
+
+    <!-- Payment Settings -->
+    <div class="settings-panel" id="tab-payments" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Payment Gateways</div>
+        </div>
+        <div class="alert alert-warning">
+          <span>⚠️</span>
+          <span>API keys are stored in <code style="background:rgba(255,255,255,.1);padding:1px 6px;border-radius:3px;">js/config.js</code>. Edit that file directly for production deployments. The fields here update localStorage settings only.</span>
+        </div>
+        <div class="form-group">
+          <label>Stripe Publishable Key</label>
+          <input type="text" class="form-control" id="s-stripeKey" placeholder="pk_live_...">
+        </div>
+        <div class="form-group">
+          <label>PayPal Client ID</label>
+          <input type="text" class="form-control" id="s-paypalClientId" placeholder="YOUR_PAYPAL_CLIENT_ID">
+        </div>
+        <div class="form-group">
+          <label>Google OAuth Client ID</label>
+          <input type="text" class="form-control" id="s-googleClientId" placeholder="YOUR_ID.apps.googleusercontent.com">
+        </div>
+        <div class="form-group">
+          <label>Payment Methods Enabled</label>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <input type="checkbox" id="s-enableCard" checked>
+              <span>💳 Credit / Debit Card (Stripe)</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <input type="checkbox" id="s-enablePaypal" checked>
+              <span>🅿️ PayPal</span>
+            </label>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings('payments')">Save Payment Settings</button>
+      </div>
+    </div>
+
+    <!-- SEO Settings -->
+    <div class="settings-panel" id="tab-seo" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">SEO & Meta</div>
+        </div>
+        <div class="form-group">
+          <label>Default Meta Title <span style="color:var(--admin-muted);font-size:.72rem;">(max 60 chars)</span></label>
+          <input type="text" class="form-control" id="s-metaTitle" maxlength="60">
+          <div id="title-count" style="font-size:.72rem;color:var(--admin-muted);margin-top:4px;"></div>
+        </div>
+        <div class="form-group">
+          <label>Default Meta Description <span style="color:var(--admin-muted);font-size:.72rem;">(max 160 chars)</span></label>
+          <textarea class="form-control" id="s-metaDesc" rows="3" maxlength="160"></textarea>
+          <div id="desc-count" style="font-size:.72rem;color:var(--admin-muted);margin-top:4px;"></div>
+        </div>
+        <div class="form-group">
+          <label>Google Analytics ID</label>
+          <input type="text" class="form-control" id="s-gaId" placeholder="G-XXXXXXXXXX">
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings('seo')">Save SEO Settings</button>
+      </div>
+    </div>
+
+    <!-- Social Settings -->
+    <div class="settings-panel" id="tab-social" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Social Media</div>
+        </div>
+        <div class="form-group">
+          <label>Instagram Handle <span style="color:var(--admin-muted);font-size:.72rem;">(without @)</span></label>
+          <input type="text" class="form-control" id="s-instagram" placeholder="buyalchimia">
+        </div>
+        <div class="form-group">
+          <label>Facebook Page</label>
+          <input type="text" class="form-control" id="s-facebook" placeholder="buyalchimia">
+        </div>
+        <div class="form-group">
+          <label>Pinterest</label>
+          <input type="text" class="form-control" id="s-pinterest" placeholder="buyalchimia">
+        </div>
+        <div class="form-group">
+          <label>Twitter / X Handle</label>
+          <input type="text" class="form-control" id="s-twitter" placeholder="buyalchimia">
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings('social')">Save Social Settings</button>
+      </div>
+    </div>
+
+    <!-- Security / Password -->
+    <div class="settings-panel" id="tab-security" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Admin Password</div>
+        </div>
+        <div class="alert alert-info">
+          <span>ℹ️</span>
+          <span>For a real deployment, change admin credentials in <code style="background:rgba(255,255,255,.1);padding:1px 6px;border-radius:3px;">admin/js/admin-auth.js</code>.</span>
+        </div>
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" class="form-control" id="current-pwd" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" class="form-control" id="new-pwd" placeholder="Minimum 8 characters">
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" class="form-control" id="confirm-pwd" placeholder="Repeat new password">
+        </div>
+        <div id="pwd-error" class="alert alert-danger" style="display:none;"></div>
+        <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header">
+          <div class="card-title">Session</div>
+        </div>
+        <div id="session-info" style="font-size:.85rem;color:var(--admin-muted);margin-bottom:16px;"></div>
+        <button class="btn btn-secondary" onclick="AdminAuth.logout()">Sign Out</button>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="settings-panel" id="tab-danger" style="display:none;">
+      <div class="card" style="border-color:rgba(239,68,68,.3);">
+        <div class="card-header">
+          <div class="card-title" style="color:var(--admin-danger);">⚠️ Danger Zone</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius);flex-wrap:wrap;gap:12px;">
+            <div>
+              <div style="font-weight:600;margin-bottom:4px;">Export All Data</div>
+              <div style="font-size:.82rem;color:var(--admin-muted);">Download a complete JSON export of all store data.</div>
+            </div>
+            <button class="btn btn-secondary" onclick="exportAllData()">⬇ Export JSON</button>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius);flex-wrap:wrap;gap:12px;">
+            <div>
+              <div style="font-weight:600;margin-bottom:4px;">Reset Orders</div>
+              <div style="font-size:.82rem;color:var(--admin-muted);">Delete all order records. Products and settings are kept.</div>
+            </div>
+            <button class="btn btn-danger" onclick="resetOrders()">Reset Orders</button>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius);flex-wrap:wrap;gap:12px;">
+            <div>
+              <div style="font-weight:600;margin-bottom:4px;">Reset All Data</div>
+              <div style="font-size:.82rem;color:var(--admin-muted);">Clear all store data and restore factory defaults. This cannot be undone.</div>
+            </div>
+            <button class="btn btn-danger" onclick="resetAllData()">Reset Everything</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="../js/db.js"></script>
+<script src="js/admin-auth.js"></script>
+<script src="js/admin-layout.js"></script>
+<script>
+AdminAuth.guard();
+document.addEventListener('DOMContentLoaded', () => {
+  renderAdminLayout('Settings', 'Store configuration');
+  initSettings();
+});
+
+function initSettings() {
+  // Tab switching
+  document.getElementById('settings-tabs').addEventListener('click', e => {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.settings-panel').forEach(p => p.style.display = 'none');
+    btn.classList.add('active');
+    const panel = document.getElementById('tab-' + btn.dataset.tab);
+    if (panel) panel.style.display = 'block';
+  });
+
+  // Load settings
+  const s = DB.settings.get();
+  setValue('s-storeName', s.storeName);
+  setValue('s-tagline', s.tagline);
+  setValue('s-email', s.email);
+  setValue('s-phone', s.phone);
+  setValue('s-whatsapp', s.whatsapp);
+  setValue('s-address', s.address);
+  setValue('s-currency', s.currency);
+  setValue('s-currencySymbol', s.currencySymbol);
+  setValue('s-freeShipping', s.freeShippingThreshold);
+  setValue('s-shippingCost', s.defaultShippingCost);
+  setValue('s-deliveryTime', s.deliveryTime || '6-12 business days');
+  setValue('s-shippingZones', s.shippingZones || 'USA, Canada, Europe, Australia');
+  setValue('s-stripeKey', s.stripeKey);
+  setValue('s-paypalClientId', s.paypalClientId);
+  setValue('s-googleClientId', s.googleClientId);
+  setValue('s-metaTitle', s.metaTitle);
+  setValue('s-metaDesc', s.metaDescription);
+  setValue('s-gaId', s.gaId);
+  setValue('s-instagram', s.instagram);
+  setValue('s-facebook', s.facebook);
+  setValue('s-pinterest', s.pinterest);
+  setValue('s-twitter', s.twitter);
+
+  // Character counters for SEO
+  ['s-metaTitle', 's-metaDesc'].forEach(id => {
+    const el = document.getElementById(id);
+    const countEl = document.getElementById(id === 's-metaTitle' ? 'title-count' : 'desc-count');
+    const max = id === 's-metaTitle' ? 60 : 160;
+    const update = () => {
+      const len = (el.value||'').length;
+      if (countEl) countEl.textContent = `${len}/${max} characters`;
+    };
+    el && el.addEventListener('input', update);
+    update();
+  });
+
+  // Session info
+  const session = AdminAuth.getSession();
+  if (session) {
+    const loginAt = new Date(session.loginAt);
+    const expires = new Date(session.expires);
+    document.getElementById('session-info').innerHTML =
+      `Logged in as <strong>${session.username}</strong> since ${loginAt.toLocaleTimeString()}.<br>Session expires: ${expires.toLocaleTimeString()}`;
+  }
+}
+
+function setValue(id, val) {
+  const el = document.getElementById(id);
+  if (!el || val === undefined || val === null) return;
+  if (el.tagName === 'SELECT') el.value = val;
+  else if (el.type === 'checkbox') el.checked = !!val;
+  else el.value = val;
+}
+
+function saveSettings(section) {
+  const s = DB.settings.get();
+  let updated = {};
+
+  if (section === 'general') {
+    updated = {
+      storeName: getValue('s-storeName'),
+      tagline: getValue('s-tagline'),
+      email: getValue('s-email'),
+      phone: getValue('s-phone'),
+      whatsapp: getValue('s-whatsapp'),
+      address: getValue('s-address'),
+      currency: getValue('s-currency'),
+      currencySymbol: getValue('s-currencySymbol'),
+    };
+  } else if (section === 'shipping') {
+    updated = {
+      freeShippingThreshold: parseFloat(getValue('s-freeShipping')) || 75,
+      defaultShippingCost: parseFloat(getValue('s-shippingCost')) || 9,
+      deliveryTime: getValue('s-deliveryTime'),
+      shippingZones: getValue('s-shippingZones'),
+    };
+  } else if (section === 'payments') {
+    updated = {
+      stripeKey: getValue('s-stripeKey'),
+      paypalClientId: getValue('s-paypalClientId'),
+      googleClientId: getValue('s-googleClientId'),
+    };
+  } else if (section === 'seo') {
+    updated = {
+      metaTitle: getValue('s-metaTitle'),
+      metaDescription: getValue('s-metaDesc'),
+      gaId: getValue('s-gaId'),
+    };
+  } else if (section === 'social') {
+    updated = {
+      instagram: getValue('s-instagram'),
+      facebook: getValue('s-facebook'),
+      pinterest: getValue('s-pinterest'),
+      twitter: getValue('s-twitter'),
+    };
+  }
+  DB.settings.update(updated);
+  adminToast(`${section.charAt(0).toUpperCase()+section.slice(1)} settings saved ✓`);
+}
+
+function getValue(id) {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  if (el.type === 'checkbox') return el.checked;
+  return el.value;
+}
+
+function changePassword() {
+  const current = document.getElementById('current-pwd').value;
+  const newPwd = document.getElementById('new-pwd').value;
+  const confirm = document.getElementById('confirm-pwd').value;
+  const errEl = document.getElementById('pwd-error');
+
+  if (current !== 'alchimia2026') {
+    errEl.textContent = 'Current password is incorrect.';
+    errEl.style.display = 'flex';
+    return;
+  }
+  if (newPwd.length < 8) {
+    errEl.textContent = 'New password must be at least 8 characters.';
+    errEl.style.display = 'flex';
+    return;
+  }
+  if (newPwd !== confirm) {
+    errEl.textContent = 'Passwords do not match.';
+    errEl.style.display = 'flex';
+    return;
+  }
+  errEl.style.display = 'none';
+  document.getElementById('current-pwd').value = '';
+  document.getElementById('new-pwd').value = '';
+  document.getElementById('confirm-pwd').value = '';
+  adminToast('Password updated. Update admin-auth.js for persistence. ✓', 'warning');
+}
+
+function exportAllData() {
+  const data = {
+    products: DB.products.getAll(),
+    orders: DB.orders.getAll(),
+    customers: DB.customers.getAll(),
+    reviews: DB.reviews.getAll(),
+    coupons: DB.coupons.getAll(),
+    newsletter: DB.newsletter.getAll(),
+    categories: DB.categories.getAll(),
+    settings: DB.settings.get(),
+    blog: DB.blog.getAll(),
+    exportedAt: new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'alchimia-backup.json'; a.click();
+  URL.revokeObjectURL(url);
+  adminToast('Data exported ✓');
+}
+
+function resetOrders() {
+  if (!confirm('Delete all orders? This cannot be undone.')) return;
+  localStorage.removeItem('alchimia_orders');
+  localStorage.removeItem('alchimia_customers');
+  adminToast('Orders reset ✓', 'warning');
+}
+
+function resetAllData() {
+  if (!confirm('RESET ALL DATA? This will delete all products, orders, reviews and settings. Type "RESET" to confirm.')) return;
+  const confirm2 = prompt('Type RESET to confirm:');
+  if (confirm2 !== 'RESET') return;
+  ['alchimia_db_version','alchimia_products','alchimia_orders','alchimia_customers',
+   'alchimia_reviews','alchimia_coupons','alchimia_newsletter','alchimia_categories',
+   'alchimia_settings','alchimia_blog','alchimia_media'].forEach(k => localStorage.removeItem(k));
+  adminToast('All data reset. Reloading…', 'warning');
+  setTimeout(() => location.reload(), 1500);
+}
+</script>
+</body>
+</html>

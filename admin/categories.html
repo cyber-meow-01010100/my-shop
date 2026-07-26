@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Categories — Alchimia Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="admin-main">
+  <div class="admin-content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Categories</h1>
+        <p>Manage product categories and taxonomy</p>
+      </div>
+      <div class="page-header-actions">
+        <button class="btn btn-primary" onclick="openCategoryModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Category
+        </button>
+      </div>
+    </div>
+
+    <!-- Categories Table Card -->
+    <div class="card" style="padding:0;">
+      <div class="card-header" style="padding:20px 24px 0;">
+        <div>
+          <div class="card-title">All Categories</div>
+          <div class="card-subtitle" id="cat-count-label">Loading…</div>
+        </div>
+        <div class="search-input-wrap" style="max-width:260px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-cats" placeholder="Search categories…" oninput="renderTable()">
+        </div>
+      </div>
+      <div style="padding:16px 24px 24px;">
+        <div class="table-wrap">
+          <table id="cats-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Slug</th>
+                <th>Description</th>
+                <th style="text-align:center;">Products</th>
+                <th style="text-align:center;">Status</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cats-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--admin-muted);">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add / Edit Category Modal -->
+<div class="modal-overlay" id="category-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Add Category</div>
+      <button class="modal-close" onclick="closeModal('category-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-cat-id">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cat-name">Category Name <span style="color:var(--admin-danger)">*</span></label>
+          <input type="text" id="cat-name" class="form-control" placeholder="e.g. Spices" oninput="autoSlug()">
+        </div>
+        <div class="form-group">
+          <label for="cat-slug">Slug <span style="color:var(--admin-danger)">*</span></label>
+          <input type="text" id="cat-slug" class="form-control" placeholder="e.g. spices">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="cat-blurb">Short Description</label>
+        <input type="text" id="cat-blurb" class="form-control" placeholder="Brief description shown on the storefront">
+      </div>
+
+      <div class="form-group">
+        <label for="cat-icon">Icon Key (optional)</label>
+        <input type="text" id="cat-icon" class="form-control" placeholder="e.g. cinnamonQuills">
+      </div>
+
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <label class="toggle">
+            <input type="checkbox" id="cat-active" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <span style="font-size:.85rem;color:var(--admin-text);">Active (visible on storefront)</span>
+        </label>
+      </div>
+
+      <div id="cat-error" style="color:var(--admin-danger);font-size:.82rem;min-height:18px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('category-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCategory()" id="save-cat-btn">Save Category</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/db.js"></script>
+<script src="js/admin-auth.js"></script>
+<script src="js/admin-layout.js"></script>
+<script>
+AdminAuth.guard();
+renderAdminLayout('Categories', 'Manage product categories');
+
+/* ── Helpers ── */
+function slugify(s) {
+  return s.toLowerCase().trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+function autoSlug() {
+  const name = document.getElementById('cat-name').value;
+  document.getElementById('cat-slug').value = slugify(name);
+}
+
+/* ── Product count per category ── */
+function productCountMap() {
+  const products = DB.products.getAll();
+  const map = {};
+  products.forEach(p => {
+    const catName = p.category || '';
+    map[catName] = (map[catName] || 0) + 1;
+  });
+  return map;
+}
+
+/* ── Render Table ── */
+function renderTable() {
+  const query  = (document.getElementById('search-cats').value || '').toLowerCase();
+  const cats   = DB.categories.getAll();
+  const pMap   = productCountMap();
+  const tbody  = document.getElementById('cats-tbody');
+
+  const filtered = cats.filter(c =>
+    c.name.toLowerCase().includes(query) ||
+    (c.slug || '').toLowerCase().includes(query)
+  );
+
+  document.getElementById('cat-count-label').textContent =
+    `${filtered.length} categor${filtered.length === 1 ? 'y' : 'ies'}`;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="6">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <h3>No categories found</h3>
+        <p>Try adjusting your search or add a new category.</p>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(c => {
+    /* Match products by category name or slug */
+    const count = pMap[c.name] || 0;
+    const statusBadge = c.active
+      ? `<span class="badge badge-success">● Active</span>`
+      : `<span class="badge badge-muted">○ Inactive</span>`;
+
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,rgba(46,125,50,.25),rgba(74,222,128,.1));display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">🏷️</div>
+          <div>
+            <div style="font-weight:600;color:var(--admin-text);">${escHtml(c.name)}</div>
+            ${c.icon ? `<div style="font-size:.72rem;color:var(--admin-muted);font-family:var(--mono);">${escHtml(c.icon)}</div>` : ''}
+          </div>
+        </div>
+      </td>
+      <td><code style="font-size:.78rem;color:var(--admin-info);background:rgba(56,189,248,.08);padding:2px 8px;border-radius:4px;">${escHtml(c.slug || '')}</code></td>
+      <td style="color:var(--admin-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(c.blurb || '—')}</td>
+      <td style="text-align:center;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;background:rgba(99,102,241,.15);color:#818cf8;border-radius:6px;font-size:.8rem;font-weight:700;padding:0 8px;">${count}</span>
+      </td>
+      <td style="text-align:center;">
+        <label class="toggle" title="${c.active ? 'Deactivate' : 'Activate'}" style="display:inline-block;">
+          <input type="checkbox" ${c.active ? 'checked' : ''} onchange="toggleStatus('${c.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td style="text-align:right;">
+        <div style="display:flex;gap:6px;justify-content:flex-end;">
+          <button class="btn btn-secondary btn-sm" onclick="editCategory('${c.id}')">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCategory('${c.id}', '${escAttr(c.name)}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Toggle status inline ── */
+function toggleStatus(id, active) {
+  DB.categories.update(id, { active });
+  adminToast(active ? 'Category activated' : 'Category deactivated', 'success');
+  renderTable();
+}
+
+/* ── Open modal for Add ── */
+function openCategoryModal() {
+  document.getElementById('edit-cat-id').value = '';
+  document.getElementById('modal-title').textContent = 'Add Category';
+  document.getElementById('cat-name').value = '';
+  document.getElementById('cat-slug').value = '';
+  document.getElementById('cat-blurb').value = '';
+  document.getElementById('cat-icon').value = '';
+  document.getElementById('cat-active').checked = true;
+  document.getElementById('cat-error').textContent = '';
+  document.getElementById('save-cat-btn').textContent = 'Save Category';
+  openModal('category-modal');
+  setTimeout(() => document.getElementById('cat-name').focus(), 100);
+}
+
+/* ── Open modal for Edit ── */
+function editCategory(id) {
+  const cat = DB.categories.getById(id);
+  if (!cat) return;
+  document.getElementById('edit-cat-id').value = cat.id;
+  document.getElementById('modal-title').textContent = 'Edit Category';
+  document.getElementById('cat-name').value = cat.name || '';
+  document.getElementById('cat-slug').value = cat.slug || '';
+  document.getElementById('cat-blurb').value = cat.blurb || '';
+  document.getElementById('cat-icon').value = cat.icon || '';
+  document.getElementById('cat-active').checked = !!cat.active;
+  document.getElementById('cat-error').textContent = '';
+  document.getElementById('save-cat-btn').textContent = 'Update Category';
+  openModal('category-modal');
+}
+
+/* ── Save (Add or Update) ── */
+function saveCategory() {
+  const id    = document.getElementById('edit-cat-id').value;
+  const name  = document.getElementById('cat-name').value.trim();
+  const slug  = document.getElementById('cat-slug').value.trim();
+  const blurb = document.getElementById('cat-blurb').value.trim();
+  const icon  = document.getElementById('cat-icon').value.trim();
+  const active= document.getElementById('cat-active').checked;
+  const errEl = document.getElementById('cat-error');
+
+  if (!name) { errEl.textContent = 'Category name is required.'; return; }
+  if (!slug)  { errEl.textContent = 'Slug is required.'; return; }
+
+  /* Slug uniqueness check */
+  const existing = DB.categories.getAll();
+  const duplicate = existing.find(c => c.slug === slug && c.id !== id);
+  if (duplicate) { errEl.textContent = `Slug "${slug}" is already used by "${duplicate.name}".`; return; }
+
+  const data = { name, slug, blurb, icon, active };
+
+  if (id) {
+    DB.categories.update(id, data);
+    adminToast('Category updated successfully', 'success');
+  } else {
+    DB.categories.add(data);
+    adminToast('Category added successfully', 'success');
+  }
+
+  closeModal('category-modal');
+  renderTable();
+}
+
+/* ── Delete ── */
+function deleteCategory(id, name) {
+  const pMap = productCountMap();
+  const cat  = DB.categories.getById(id);
+  const count = pMap[cat?.name] || 0;
+  const warning = count > 0 ? `\n\n⚠️ This category has ${count} product(s) assigned to it.` : '';
+  if (!adminConfirm(`Delete category "${name}"?${warning}`)) return;
+  DB.categories.delete(id);
+  adminToast('Category deleted', 'success');
+  renderTable();
+}
+
+/* ── Escape helpers ── */
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return String(s).replace(/'/g,"\\'");
+}
+
+/* ── Init ── */
+renderTable();
+</script>
+</body>
+</html>

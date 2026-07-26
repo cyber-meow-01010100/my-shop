@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product — Buy Alchimia</title>
+<meta name="description" content="Premium organic product from Sri Lanka — Buy Alchimia.">
+<link rel="stylesheet" href="css/style.css">
+<script type="application/ld+json" id="product-schema"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo"><span class="mark">Buy</span>Alchimia</a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Shop</a></li>
+        <li><a href="index.html#story">Our Story</a></li>
+        <li><a href="index.html#faq">FAQ</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" id="search-trigger" title="Search" type="button">🔍</button>
+      <a href="index.html#wishlist" class="icon-btn" title="Wishlist" style="position:relative;">
+        ♡<span class="cart-count wishlist-count" style="background:#d43f6a;">0</span>
+      </a>
+      <a href="login.html" class="icon-btn" id="account-link" title="Account">👤</a>
+      <a href="cart.html" class="icon-btn" title="Cart">
+        🧺<span class="cart-count" id="cart-count">0</span>
+      </a>
+      <button class="mobile-toggle" aria-label="Menu"><span class="bar"></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="search-overlay" id="search-overlay">
+  <div class="search-box">
+    <form style="flex:1;display:flex;"><input type="search" placeholder="Search cinnamon, honey, tea…" autocomplete="off"></form>
+    <button type="button" title="Close">✕</button>
+  </div>
+</div>
+
+<div class="nav-drawer" id="nav-drawer">
+  <div class="nav-drawer-overlay"></div>
+  <nav class="nav-drawer-panel">
+    <a href="index.html">Home</a>
+    <a href="products.html">Shop</a>
+    <a href="index.html#story">Our Story</a>
+    <a href="index.html#faq">FAQ</a>
+    <a href="index.html#contact">Contact</a>
+    <a href="login.html">Account</a>
+    <a href="cart.html">Cart</a>
+  </nav>
+</div>
+
+<!-- Breadcrumb -->
+<div class="container" style="padding-top:24px;">
+  <nav class="breadcrumb" aria-label="Breadcrumb" id="pd-breadcrumb">
+    <a href="index.html">Home</a>
+    <span class="sep">/</span>
+    <a href="products.html">Shop</a>
+    <span class="sep">/</span>
+    <span class="current" id="breadcrumb-product">Product</span>
+  </nav>
+</div>
+
+<section style="padding-top:24px;">
+  <div class="container pd-grid reveal" id="pd-root">
+    <p>Loading…</p>
+  </div>
+</section>
+
+<section id="pd-tabs-section" style="padding-top:0;">
+  <div class="container reveal" id="pd-tabs"></div>
+</section>
+
+<section style="padding-top:0;">
+  <div class="container">
+    <div class="section-head reveal"><div><span class="eyebrow">You may also like</span><h2>Related products</h2></div></div>
+    <div class="product-grid stagger" id="related-grid"></div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 Buy Alchimia. All rights reserved.</span>
+      <span>Made with care, close to the source.</span>
+    </div>
+  </div>
+</footer>
+
+<a class="whatsapp-fab" href="https://wa.me/94712345678" target="_blank" rel="noopener" title="Chat on WhatsApp">💬</a>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/db.js"></script>
+<script src="js/reviews.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/quickview.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(async function initProduct(){
+  const root = document.getElementById("pd-root");
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  const products = await fetchProducts();
+  const product = products.find(p => p.id === id) || products[0];
+
+  if (!product) {
+    root.innerHTML = "<p>Product not found. <a href='products.html'>Back to shop</a></p>";
+    return;
+  }
+
+  const inWishlist = typeof Wishlist !== "undefined" && Wishlist.has(product.id);
+  const reviewCount = 24 + (product.id.charCodeAt(2) % 40);
+  const lowStock = product.stock < 15;
+
+  root.innerHTML = `
+    <div class="pd-art" style="position:relative;">
+      <button class="wish-btn ${inWishlist ? "active" : ""}" data-id="${product.id}" style="top:16px;right:16px;">${inWishlist ? "♥" : "♡"}</button>
+      ${product.oldPrice ? `<span class="badge-sale" style="top:16px;left:16px;">-${Math.round((1 - product.price/product.oldPrice)*100)}%</span>` : ""}
+      <div class="pd-gallery">
+        <div class="pd-gallery-main" id="pd-main-img">
+          ${product.image ? `<img src="${product.image}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg);">` : (window.ALCHIMIA_ICONS[product.icon] || "")}
+        </div>
+        <div class="pd-gallery-thumbs">
+          ${[0,1,2,3].map(i => `<div class="pd-gallery-thumb ${i===0?'active':''}" onclick="document.querySelectorAll('.pd-gallery-thumb').forEach(t=>t.classList.remove('active'));this.classList.add('active')">${product.image ? `<img src="${product.image}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm);">` : (window.ALCHIMIA_ICONS[product.icon] || "")}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div>
+      <span class="eyebrow">${product.category}</span>
+      <h1>${product.name}</h1>
+      <div class="rating-line" style="font-size:.95rem;">★★★★★ <span>(${reviewCount} reviews)</span></div>
+      <div class="pd-price">
+        ${product.oldPrice ? `<span class="old" style="font-size:1rem;">${formatPrice(product.oldPrice)}</span> ` : ""}${formatPrice(product.price)}
+        <span style="font-size:.85rem;color:#9b9385;font-family:var(--font-body);"> / ${product.unit}</span>
+      </div>
+      <p style="color:#43503f;line-height:1.7;">${product.description}</p>
+      <div class="stock-line ${lowStock ? "low" : ""}"><span class="dot"></span>${lowStock ? `Only ${product.stock} left in stock` : "In stock"}</div>
+
+      <!-- Trust row -->
+      <div class="trust-row">
+        <div class="trust-row-item"><span class="icon">🌱</span> Certified Organic</div>
+        <div class="trust-row-item"><span class="icon">🚚</span> Free Shipping $75+</div>
+        <div class="trust-row-item"><span class="icon">🔒</span> Secure Checkout</div>
+        <div class="trust-row-item"><span class="icon">🌍</span> Sri Lanka Origin</div>
+      </div>
+
+      <div class="pd-meta">
+        <div><b>Origin</b>${product.origin}</div>
+        <div><b>Unit</b>${product.unit}</div>
+        <div><b>Category</b>${product.category}</div>
+      </div>
+
+      <div class="qty-select">
+        <div class="qty-box">
+          <button type="button" id="dec">−</button>
+          <span id="qty-val">1</span>
+          <button type="button" id="inc">+</button>
+        </div>
+        <button class="btn-primary" id="add-to-cart-btn">Add to Cart — ${formatPrice(product.price)}</button>
+      </div>
+      <a href="cart.html" class="btn-outline btn-block" style="margin-top:8px;">View Cart →</a>
+
+      <!-- Share row -->
+      <div class="share-row">
+        <span>Share:</span>
+        <a href="https://wa.me/?text=${encodeURIComponent(product.name + ' - ' + window.location.href)}" target="_blank" rel="noopener" class="share-btn" title="Share on WhatsApp" aria-label="Share on WhatsApp">💬</a>
+        <button class="share-btn" title="Copy link" aria-label="Copy link" onclick="navigator.clipboard.writeText(window.location.href);showToast('Link copied!')">&#128279;</button>
+      </div>
+    </div>
+  `;
+
+  document.title = `${product.name} — Buy Alchimia`;
+  document.getElementById('breadcrumb-product').textContent = product.name;
+
+  // Update SEO structured data
+  const schema = document.getElementById('product-schema');
+  if (schema) {
+    schema.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": product.name,
+      "description": product.description,
+      "offers": { "@type": "Offer", "price": product.price, "priceCurrency": "USD", "availability": "https://schema.org/InStock" }
+    });
+  }
+
+  let qty = 1;
+  document.getElementById("inc").onclick = () => { qty++; document.getElementById("qty-val").textContent = qty; updateBtn(); };
+  document.getElementById("dec").onclick = () => { if (qty>1) qty--; document.getElementById("qty-val").textContent = qty; updateBtn(); };
+  function updateBtn(){
+    document.getElementById("add-to-cart-btn").textContent = `Add to Cart — ${formatPrice(product.price * qty)}`;
+  }
+  document.getElementById("add-to-cart-btn").onclick = () => {
+    Cart.add(product.id, qty);
+    showToast("Added to cart");
+  };
+
+  // ---- Tabs: Description / Ingredients / Benefits / Origin ----
+  const tabsRoot = document.getElementById("pd-tabs");
+  const tabs = [
+    { key: "description", label: "Description", content: `<p>${product.details || product.description}</p>` },
+    { key: "ingredients", label: "Ingredients", content: `<p>100% ${product.name.toLowerCase()}. No additives, fillers, or artificial preservatives.</p>` },
+    { key: "benefits", label: "Benefits", content: `<p>Traditionally valued for its purity and full-bodied flavor — sourced to give you the closest possible experience to the fresh, whole ingredient.</p>` },
+    { key: "origin", label: "Origin", content: `<p>Grown and processed in ${product.origin}, then packed in small batches before shipping worldwide.</p>` }
+  ];
+  tabsRoot.innerHTML = `
+    <div class="pay-tabs" id="pd-tab-buttons">
+      ${tabs.map((t,i) => `<button type="button" class="pay-tab ${i===0?"active":""}" data-tab="${t.key}">${t.label}</button>`).join("")}
+      <button type="button" class="pay-tab" data-tab="reviews">⭐ Reviews (${reviewCount})</button>
+    </div>
+    <div style="max-width:70ch;padding:10px 4px;color:#43503f;">
+      ${tabs.map((t,i) => `<div class="pay-panel ${i===0?"active":""}" id="tab-${t.key}">${t.content}</div>`).join("")}
+      <div class="pay-panel" id="tab-reviews"></div>
+    </div>
+  `;
+  tabsRoot.querySelectorAll(".pay-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      tabsRoot.querySelectorAll(".pay-tab").forEach(b => b.classList.remove("active"));
+      tabsRoot.querySelectorAll(".pay-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      const key = btn.dataset.tab;
+      const panel = document.getElementById(`tab-${key}`);
+      if (panel) { panel.classList.add("active"); }
+      if (key === 'reviews' && typeof Reviews !== 'undefined') {
+        Reviews.renderSection(product.id, product.name, panel);
+      }
+    });
+  });
+
+  // ---- Related products ----
+  const relatedGrid = document.getElementById("related-grid");
+  const related = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const fallbackRelated = related.length ? related : products.filter(p => p.id !== product.id).slice(0, 4);
+  relatedGrid.innerHTML = fallbackRelated.map(p => productCardHTML(p, "reveal-child")).join("");
+  bindProductCardEvents(relatedGrid, products);
+})();
+</script>
+<script src="js/animations.js"></script>
+</body>
+</html>

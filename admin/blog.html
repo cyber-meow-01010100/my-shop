@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog — Alchimia Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<!-- Main layout shell -->
+<div class="admin-main">
+  <div class="admin-content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Blog</h1>
+        <p>Content management — create and manage your articles</p>
+      </div>
+      <div class="page-header-actions">
+        <button class="btn btn-primary" onclick="openPostModal()">
+          <span>✍️</span> New Post
+        </button>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="blog-search" placeholder="Search posts by title, category, author…" oninput="renderTable()">
+      </div>
+      <select class="filter-select" id="filter-status" onchange="renderTable()">
+        <option value="">All Statuses</option>
+        <option value="published">Published</option>
+        <option value="draft">Draft</option>
+      </select>
+      <select class="filter-select" id="filter-category" onchange="renderTable()">
+        <option value="">All Categories</option>
+        <option value="Education">Education</option>
+        <option value="Craftsmanship">Craftsmanship</option>
+        <option value="Recipes">Recipes</option>
+        <option value="News">News</option>
+        <option value="Wellness">Wellness</option>
+      </select>
+    </div>
+
+    <!-- Posts Table -->
+    <div class="card" style="padding:0;">
+      <div class="table-wrap">
+        <table id="blog-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Author</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th style="text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="blog-tbody">
+            <tr>
+              <td colspan="6">
+                <div class="empty-state" style="padding:40px 20px;">
+                  <div style="font-size:2rem;margin-bottom:8px;">✍️</div>
+                  <h3>Loading posts…</h3>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="blog-pagination" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--admin-border);font-size:.8rem;color:var(--admin-muted);"></div>
+    </div>
+
+  </div><!-- /.admin-content -->
+</div><!-- /.admin-main -->
+
+<!-- ===================== ADD / EDIT MODAL ===================== -->
+<div class="modal-overlay" id="post-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title-text">New Post</div>
+      <button class="modal-close" onclick="closeModal('post-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+
+      <div class="form-row">
+        <div class="form-group" style="grid-column:1/-1;">
+          <label for="post-title">Title <span style="color:var(--admin-danger)">*</span></label>
+          <input type="text" id="post-title" class="form-control" placeholder="Your post title…" oninput="autoSlug()">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="post-slug">Slug</label>
+          <input type="text" id="post-slug" class="form-control" placeholder="auto-generated-from-title" style="font-family:var(--mono);font-size:.8rem;">
+        </div>
+        <div class="form-group">
+          <label for="post-category">Category</label>
+          <select id="post-category" class="form-control">
+            <option value="Education">Education</option>
+            <option value="Craftsmanship">Craftsmanship</option>
+            <option value="Recipes">Recipes</option>
+            <option value="News">News</option>
+            <option value="Wellness">Wellness</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="post-author">Author</label>
+          <input type="text" id="post-author" class="form-control" placeholder="Alchimia Team" value="Alchimia Team">
+        </div>
+        <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding-bottom:4px;">
+            <label class="toggle">
+              <input type="checkbox" id="post-published">
+              <span class="toggle-slider"></span>
+            </label>
+            <span style="font-size:.85rem;color:var(--admin-text);font-weight:500;">Published</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="post-excerpt">Excerpt</label>
+        <textarea id="post-excerpt" class="form-control" rows="2" placeholder="A short summary of the post (shown in listings)…"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="post-body">Body <span style="color:var(--admin-danger)">*</span></label>
+        <textarea id="post-body" class="form-control" rows="10" placeholder="Write your post content here…" style="min-height:220px;font-size:.875rem;line-height:1.7;"></textarea>
+      </div>
+
+      <div id="modal-error" class="alert alert-danger" style="display:none;margin-bottom:0;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('post-modal')">Cancel</button>
+      <button class="btn btn-primary" id="modal-save-btn" onclick="savePost()">💾 Save Post</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DELETE CONFIRM MODAL ===================== -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="width:min(420px,100%);">
+    <div class="modal-header">
+      <div class="modal-title">Delete Post</div>
+      <button class="modal-close" onclick="closeModal('delete-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;padding:8px 0 16px;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">🗑️</div>
+        <p style="color:var(--admin-muted);font-size:.9rem;">Are you sure you want to delete <strong id="delete-post-name" style="color:var(--admin-text);"></strong>? This action cannot be undone.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-delete-btn">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/db.js"></script>
+<script src="js/admin-auth.js"></script>
+<script src="js/admin-layout.js"></script>
+<script>
+/* ============================================================
+   BLOG ADMIN PAGE
+   ============================================================ */
+
+const POSTS_PER_PAGE = 12;
+let currentPage = 1;
+let allPosts = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  AdminAuth.guard();
+  renderAdminLayout('Blog', 'Content management');
+  loadPosts();
+});
+
+function loadPosts() {
+  allPosts = DB.blog.getAll();
+  renderTable();
+}
+
+/* ---- Filtering ---- */
+function getFiltered() {
+  const q     = document.getElementById('blog-search').value.toLowerCase().trim();
+  const stat  = document.getElementById('filter-status').value;
+  const cat   = document.getElementById('filter-category').value;
+
+  return allPosts.filter(p => {
+    const matchQ   = !q || p.title.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q) || (p.author||'').toLowerCase().includes(q);
+    const matchS   = !stat || (stat === 'published' ? p.published : !p.published);
+    const matchC   = !cat  || p.category === cat;
+    return matchQ && matchS && matchC;
+  });
+}
+
+/* ---- Render Table ---- */
+function renderTable() {
+  const filtered = getFiltered();
+  const totalPages = Math.ceil(filtered.length / POSTS_PER_PAGE) || 1;
+  if (currentPage > totalPages) currentPage = 1;
+
+  const start = (currentPage - 1) * POSTS_PER_PAGE;
+  const page  = filtered.slice(start, start + POSTS_PER_PAGE);
+
+  const tbody = document.getElementById('blog-tbody');
+  if (!page.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state" style="padding:48px 20px;">
+      <div style="font-size:2.5rem;margin-bottom:10px;">📭</div>
+      <h3>No posts found</h3>
+      <p>Try adjusting your search or filters, or create a new post.</p>
+    </div></td></tr>`;
+    document.getElementById('blog-pagination').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = page.map(p => `
+    <tr>
+      <td>
+        <div style="font-weight:600;color:#fff;max-width:300px;">${escHtml(p.title)}</div>
+        <div style="font-size:.75rem;color:var(--admin-muted);font-family:var(--mono);margin-top:2px;">/${escHtml(p.slug||'')}</div>
+      </td>
+      <td>
+        <span class="badge badge-info">${escHtml(p.category||'—')}</span>
+      </td>
+      <td style="color:var(--admin-muted);">${escHtml(p.author||'—')}</td>
+      <td>
+        ${p.published
+          ? '<span class="badge badge-success">✓ Published</span>'
+          : '<span class="badge badge-muted">Draft</span>'}
+      </td>
+      <td style="color:var(--admin-muted);white-space:nowrap;">${fmtDate(p.createdAt)}</td>
+      <td>
+        <div style="display:flex;gap:6px;justify-content:flex-end;">
+          <button class="btn btn-secondary btn-sm btn-icon" title="Edit" onclick="openPostModal('${p.id}')">✏️</button>
+          <button class="btn btn-secondary btn-sm" title="${p.published?'Unpublish':'Publish'}" onclick="togglePublish('${p.id}')">
+            ${p.published ? '🔒 Unpublish' : '🚀 Publish'}
+          </button>
+          <button class="btn btn-danger btn-sm btn-icon" title="Delete" onclick="confirmDelete('${p.id}','${escHtml(p.title).replace(/'/g,"\\'")}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  /* Pagination */
+  const paginationEl = document.getElementById('blog-pagination');
+  const from = start + 1;
+  const to   = Math.min(start + POSTS_PER_PAGE, filtered.length);
+  paginationEl.innerHTML = `
+    <span>${from}–${to} of ${filtered.length} posts</span>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-secondary btn-sm" ${currentPage<=1?'disabled':''} onclick="gotoPage(${currentPage-1})">← Prev</button>
+      ${Array.from({length:totalPages},(_,i)=>`<button class="btn btn-sm ${i+1===currentPage?'btn-primary':'btn-secondary'}" onclick="gotoPage(${i+1})">${i+1}</button>`).join('')}
+      <button class="btn btn-secondary btn-sm" ${currentPage>=totalPages?'disabled':''} onclick="gotoPage(${currentPage+1})">Next →</button>
+    </div>
+  `;
+}
+
+function gotoPage(n) {
+  currentPage = n;
+  renderTable();
+}
+
+/* ---- Slug auto-generate ---- */
+function autoSlug() {
+  const titleEl = document.getElementById('post-title');
+  const slugEl  = document.getElementById('post-slug');
+  // Only auto-update if slug is still in sync (user hasn't manually edited it)
+  if (!slugEl.dataset.manual) {
+    slugEl.value = titleEl.value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('post-slug')?.addEventListener('input', function() {
+    this.dataset.manual = 'yes';
+  });
+});
+
+/* ---- Modal ---- */
+function openPostModal(id = null) {
+  const titleEl  = document.getElementById('modal-title-text');
+  const saveBtn  = document.getElementById('modal-save-btn');
+  const errEl    = document.getElementById('modal-error');
+
+  errEl.style.display = 'none';
+  document.getElementById('edit-id').value = '';
+  document.getElementById('post-title').value = '';
+  document.getElementById('post-slug').value = '';
+  delete document.getElementById('post-slug').dataset.manual;
+  document.getElementById('post-category').value = 'Education';
+  document.getElementById('post-excerpt').value = '';
+  document.getElementById('post-body').value = '';
+  document.getElementById('post-author').value = 'Alchimia Team';
+  document.getElementById('post-published').checked = false;
+
+  if (id) {
+    const post = DB.blog.getById(id);
+    if (!post) return;
+    titleEl.textContent = 'Edit Post';
+    saveBtn.textContent = '💾 Update Post';
+    document.getElementById('edit-id').value         = post.id;
+    document.getElementById('post-title').value      = post.title || '';
+    document.getElementById('post-slug').value       = post.slug || '';
+    document.getElementById('post-slug').dataset.manual = 'yes';
+    document.getElementById('post-category').value   = post.category || 'Education';
+    document.getElementById('post-excerpt').value    = post.excerpt || '';
+    document.getElementById('post-body').value       = post.body || '';
+    document.getElementById('post-author').value     = post.author || 'Alchimia Team';
+    document.getElementById('post-published').checked = !!post.published;
+  } else {
+    titleEl.textContent = 'New Post';
+    saveBtn.textContent = '💾 Save Post';
+  }
+
+  openModal('post-modal');
+  document.getElementById('post-title').focus();
+}
+
+function savePost() {
+  const id        = document.getElementById('edit-id').value;
+  const title     = document.getElementById('post-title').value.trim();
+  const slug      = document.getElementById('post-slug').value.trim();
+  const category  = document.getElementById('post-category').value;
+  const excerpt   = document.getElementById('post-excerpt').value.trim();
+  const body      = document.getElementById('post-body').value.trim();
+  const author    = document.getElementById('post-author').value.trim() || 'Alchimia Team';
+  const published = document.getElementById('post-published').checked;
+  const errEl     = document.getElementById('modal-error');
+
+  errEl.style.display = 'none';
+
+  if (!title) {
+    errEl.textContent = 'Title is required.';
+    errEl.style.display = 'flex';
+    return;
+  }
+  if (!body) {
+    errEl.textContent = 'Body content is required.';
+    errEl.style.display = 'flex';
+    return;
+  }
+
+  const data = { title, slug: slug || slugify(title), category, excerpt, body, author, published };
+
+  if (id) {
+    DB.blog.update(id, data);
+    adminToast('Post updated successfully.', 'success');
+  } else {
+    DB.blog.add(data);
+    adminToast('Post created successfully.', 'success');
+  }
+
+  closeModal('post-modal');
+  allPosts = DB.blog.getAll();
+  renderTable();
+}
+
+function slugify(str) {
+  return str.toLowerCase().trim().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-');
+}
+
+/* ---- Toggle Publish ---- */
+function togglePublish(id) {
+  const post = DB.blog.getById(id);
+  if (!post) return;
+  DB.blog.update(id, { published: !post.published });
+  allPosts = DB.blog.getAll();
+  renderTable();
+  adminToast(post.published ? 'Post unpublished.' : 'Post published!', 'success');
+}
+
+/* ---- Delete ---- */
+function confirmDelete(id, title) {
+  document.getElementById('delete-post-name').textContent = `"${title}"`;
+  document.getElementById('confirm-delete-btn').onclick = () => {
+    DB.blog.delete(id);
+    allPosts = DB.blog.getAll();
+    renderTable();
+    closeModal('delete-modal');
+    adminToast('Post deleted.', 'success');
+  };
+  openModal('delete-modal');
+}
+
+/* ---- Helpers ---- */
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+</body>
+</html>
