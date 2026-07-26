@@ -1,103 +1,138 @@
 /* ============================================================
-   BUY ALCHIMIA — Auth module (Google Sign-In)
-   Uses Google Identity Services. Real login requires a valid
-   GOOGLE_CLIENT_ID in js/config.js — see README for setup.
+   BUY ALCHIMIA — Auth module
+   Server-side sessions + Google OAuth 2.0.
+   All authentication is verified against the backend.
    ============================================================ */
-const USER_KEY = "alchimia_user";
+
+const USER_KEY = 'alchimia_user';
 
 const Auth = {
+  // In-memory cache (avoids repeated localStorage parses)
+  _user: null,
+
   getUser() {
-    try {
-      return JSON.parse(localStorage.getItem(USER_KEY));
-    } catch (e) {
-      return null;
-    }
+    if (Auth._user) return Auth._user;
+    try { return JSON.parse(localStorage.getItem(USER_KEY)); }
+    catch { return null; }
   },
+
   setUser(user) {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    Auth._user = user;
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+    else localStorage.removeItem(USER_KEY);
     Auth.reflectHeader();
   },
-  logout() {
+
+  // Verify session with the backend and sync local cache.
+  // Called on every page load — keeps the UI consistent with server state.
+  async init() {
+    try {
+      const res = await fetch('/auth/me');
+      const data = await res.json();
+      if (data.loggedIn && data.user) {
+        Auth._user = data.user;
+        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      } else {
+        // Session expired or never existed — clear stale local cache
+        Auth._user = null;
+        localStorage.removeItem(USER_KEY);
+      }
+    } catch {
+      // Network error — fall back to whatever is in localStorage
+    }
+    Auth.reflectHeader();
+  },
+
+  async logout() {
+    try {
+      await fetch('/auth/logout', { method: 'POST' });
+    } catch { /* ignore network errors on logout */ }
+    Auth._user = null;
     localStorage.removeItem(USER_KEY);
     Auth.reflectHeader();
-    showToast && showToast("Signed out");
+    if (typeof showToast === 'function') showToast('Signed out');
   },
+
   reflectHeader() {
-    const link = document.getElementById("account-link");
+    const link = document.getElementById('account-link');
     if (!link) return;
     const user = Auth.getUser();
     if (user) {
-      link.innerHTML = `<img src="${user.picture || ""}" alt="${user.name}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;${user.picture ? "" : "display:none"}">`;
+      if (user.picture) {
+        link.innerHTML = `<img src="${user.picture}" alt="${user.name || ''}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">`;
+      } else {
+        const initials = (user.name || user.email || '?').charAt(0).toUpperCase();
+        link.innerHTML = `<span style="width:26px;height:26px;border-radius:50%;background:var(--forest,#2E7D32);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;">${initials}</span>`;
+      }
       link.title = user.name || user.email;
-      link.href = "cart.html";
+      link.href = 'login.html';
     } else {
-      link.textContent = "👤";
-      link.title = "Account";
-      link.href = "login.html";
+      link.textContent = '👤';
+      link.title = 'Account';
+      link.href = 'login.html';
     }
   }
 };
 
-/* Called by Google's script via data-callback in the HTML, or manually. */
+/* ---- Google Sign-In ---- */
+
+// Called by Google's SDK after the user picks an account.
+// Sends the credential to the backend for server-side verification.
 async function handleGoogleCredential(response) {
-  const base = (window.ALCHIMIA_CONFIG && window.ALCHIMIA_CONFIG.API_BASE_URL) || "";
   try {
-    const res = await fetch(`${base}/auth/google`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch('/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ credential: response.credential })
     });
     const data = await res.json();
     if (data.success) {
       Auth.setUser(data.user);
-      showToast(`Welcome, ${data.user.name.split(" ")[0]}!`);
-      setTimeout(() => (window.location.href = "index.html"), 900);
+      const firstName = (data.user.name || '').split(' ')[0] || 'there';
+      if (typeof showToast === 'function') showToast(`Welcome, ${firstName}! ✓`);
+      setTimeout(() => {
+        const redirect = new URLSearchParams(location.search).get('redirect') || 'index.html';
+        window.location.href = redirect;
+      }, 900);
     } else {
-      throw new Error(data.error || "Login failed");
+      const msg = data.error || 'Google sign-in failed.';
+      if (typeof showToast === 'function') showToast(msg);
+      else alert(msg);
     }
   } catch (err) {
-    // Backend not reachable / not configured yet — decode the token locally
-    // so the demo still shows a signed-in state.
-    try {
-      const payload = JSON.parse(atob(response.credential.split(".")[1]));
-      Auth.setUser({
-        name: payload.name,
-        email: payload.email,
-        picture: payload.picture
-      });
-      showToast(`Welcome, ${payload.name.split(" ")[0]}! (demo mode — backend not connected)`);
-      setTimeout(() => (window.location.href = "index.html"), 1200);
-    } catch (e2) {
-      showToast("Google sign-in failed. Check console.");
-      console.error(err);
-    }
+    console.error('Google sign-in error:', err);
+    const msg = 'Google sign-in failed. Please try again.';
+    if (typeof showToast === 'function') showToast(msg);
+    else alert(msg);
   }
 }
 
+// Render the Google Sign-In button inside the given container element ID.
 function initGoogleSignIn(containerId) {
   const clientId = window.ALCHIMIA_CONFIG && window.ALCHIMIA_CONFIG.GOOGLE_CLIENT_ID;
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  if (!clientId || clientId.includes("YOUR_GOOGLE_CLIENT_ID")) {
-    container.innerHTML = `<div class="status-msg error">Google Sign-In not configured yet. Add your GOOGLE_CLIENT_ID in public/js/config.js — see README.md.</div>`;
+  if (!clientId) {
+    container.innerHTML = `<p style="font-size:.75rem;color:#9b9385;text-align:center;margin:0;">Google Sign-In is not configured.</p>`;
     return;
   }
 
-  const render = () => {
-    if (!window.google || !window.google.accounts) return setTimeout(render, 200);
+  const tryRender = () => {
+    if (!window.google || !window.google.accounts) return setTimeout(tryRender, 150);
     google.accounts.id.initialize({
       client_id: clientId,
       callback: handleGoogleCredential
     });
     google.accounts.id.renderButton(container, {
-      theme: "outline",
-      size: "large",
+      theme: 'outline',
+      size: 'large',
       width: 320,
-      shape: "pill"
+      shape: 'pill'
     });
   };
-  render();
+  tryRender();
 }
 
-document.addEventListener("DOMContentLoaded", Auth.reflectHeader);
+// Run session check + header update on every page load
+document.addEventListener('DOMContentLoaded', () => Auth.init());

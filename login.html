@@ -301,14 +301,13 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/config.js"></script>
-<script src="js/db.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/auth.js"></script>
 <script>
 
 /* ---- Tab switching ---- */
 function switchTab(tab) {
-  ['login','register'].forEach(t => {
+  ['login', 'register'].forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
     document.getElementById('panel-' + t).classList.toggle('active', t === tab);
   });
@@ -320,161 +319,146 @@ function togglePwd(id) {
   el.type = el.type === 'password' ? 'text' : 'password';
 }
 
-/* ---- Auth state ---- */
-function renderAuthState() {
-  const user = Auth.getUser();
-  document.getElementById('signed-out-card').style.display = user ? 'none' : 'block';
-  document.getElementById('signed-in-card').style.display  = user ? 'block' : 'none';
-  if (user) {
+/* ---- Render signed-in / signed-out state ---- */
+async function renderAuthState() {
+  const res = await fetch('/auth/me').catch(() => ({ json: () => ({ loggedIn: false }) }));
+  const { loggedIn, user } = await res.json();
+
+  document.getElementById('signed-out-card').style.display = loggedIn ? 'none' : 'block';
+  document.getElementById('signed-in-card').style.display  = loggedIn ? 'block' : 'none';
+
+  if (loggedIn && user) {
     document.getElementById('user-name-h1').textContent = `Welcome back, ${user.name || 'there'}!`;
     document.getElementById('user-email-p').textContent = user.email || '';
-    const initEl = document.getElementById('user-initials');
     if (user.picture) {
       document.getElementById('user-avatar-large').innerHTML = `<img src="${user.picture}" alt="${user.name}">`;
     } else {
-      const name = user.name || user.email || '?';
-      initEl.textContent = name.charAt(0).toUpperCase();
+      document.getElementById('user-initials').textContent = (user.name || user.email || '?').charAt(0).toUpperCase();
     }
   } else {
-    // Init Google Sign-In buttons
-    if (typeof initGoogleSignIn === 'function') {
-      initGoogleSignIn('g_id_signin_container_login');
-    }
+    // Render Google button once the signed-out card is visible
+    initGoogleSignIn('g_id_signin_container_login');
+    initGoogleSignIn('g_id_signin_container_reg');
   }
 }
 
-/* ---- Email/Password Login ---- */
-document.getElementById('login-form').addEventListener('submit', (e) => {
+/* ---- Email / Password Login ---- */
+document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email    = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   const errEl    = document.getElementById('login-error');
   const btn      = document.getElementById('login-submit-btn');
 
-  // Basic validation
   if (!email || !email.includes('@')) {
-    document.getElementById('login-email-err').style.display = 'block';
-    return;
+    document.getElementById('login-email-err').style.display = 'block'; return;
   }
   document.getElementById('login-email-err').style.display = 'none';
-
   if (!password) {
-    document.getElementById('login-pwd-err').style.display = 'block';
-    return;
+    document.getElementById('login-pwd-err').style.display = 'block'; return;
   }
   document.getElementById('login-pwd-err').style.display = 'none';
 
   btn.textContent = 'Signing in…';
   btn.disabled = true;
+  errEl.style.display = 'none';
 
-  // Check against registered users in localStorage
-  const users = JSON.parse(localStorage.getItem('alchimia_users') || '[]');
-  const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-  setTimeout(() => {
-    if (!found) {
-      errEl.textContent = 'No account found with that email. Please register.';
-      errEl.style.display = 'block';
-    } else if (found.password !== btoa(password)) {
-      errEl.textContent = 'Incorrect password. Please try again.';
-      errEl.style.display = 'block';
-    } else {
-      // Login success
-      const userData = { name: found.firstName + ' ' + found.lastName, email: found.email, provider: 'email' };
-      localStorage.setItem('alchimia_user', JSON.stringify(userData));
-      errEl.style.display = 'none';
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      Auth.setUser(data.user);
       showToast('Signed in successfully ✓');
       setTimeout(() => {
         const redirect = new URLSearchParams(location.search).get('redirect') || 'index.html';
         window.location.href = redirect;
       }, 800);
+    } else {
+      errEl.textContent = data.error || 'Sign-in failed. Please try again.';
+      errEl.style.display = 'block';
     }
+  } catch {
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = 'block';
+  } finally {
     btn.textContent = 'Sign In';
     btn.disabled = false;
-  }, 500);
+  }
 });
 
 /* ---- Registration ---- */
-document.getElementById('register-form').addEventListener('submit', (e) => {
+document.getElementById('register-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const first    = document.getElementById('reg-first').value.trim();
-  const last     = document.getElementById('reg-last').value.trim();
-  const email    = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-password').value;
-  const confirm  = document.getElementById('reg-confirm').value;
-  const errEl    = document.getElementById('reg-error');
-  const sucEl    = document.getElementById('reg-success');
-  const btn      = document.getElementById('reg-submit-btn');
+  const firstName = document.getElementById('reg-first').value.trim();
+  const lastName  = document.getElementById('reg-last').value.trim();
+  const email     = document.getElementById('reg-email').value.trim();
+  const password  = document.getElementById('reg-password').value;
+  const confirm   = document.getElementById('reg-confirm').value;
+  const errEl     = document.getElementById('reg-error');
+  const sucEl     = document.getElementById('reg-success');
+  const btn       = document.getElementById('reg-submit-btn');
 
   errEl.style.display = 'none';
   sucEl.style.display = 'none';
 
-  if (!first || !last) { errEl.textContent = 'Please enter your full name.'; errEl.style.display = 'block'; return; }
-  if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return; }
-  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+  if (!firstName || !lastName) {
+    errEl.textContent = 'Please enter your full name.'; errEl.style.display = 'block'; return;
+  }
+  if (!email || !email.includes('@')) {
+    errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return;
+  }
+  if (password.length < 8) {
+    errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return;
+  }
   if (password !== confirm) {
-    document.getElementById('reg-confirm-err').style.display = 'block';
-    return;
+    document.getElementById('reg-confirm-err').style.display = 'block'; return;
   }
   document.getElementById('reg-confirm-err').style.display = 'none';
-
-  // Check existing
-  const users = JSON.parse(localStorage.getItem('alchimia_users') || '[]');
-  if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-    errEl.textContent = 'An account with this email already exists.';
-    errEl.style.display = 'block';
-    return;
-  }
 
   btn.textContent = 'Creating account…';
   btn.disabled = true;
 
-  setTimeout(() => {
-    users.push({ firstName: first, lastName: last, email, password: btoa(password), createdAt: new Date().toISOString() });
-    localStorage.setItem('alchimia_users', JSON.stringify(users));
-
-    // Also add to DB customers
-    if (typeof DB !== 'undefined') {
-      DB.customers.add({ name: first + ' ' + last, email, country: 'Unknown', totalOrders: 0, totalSpent: 0 });
+  try {
+    const res = await fetch('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstName, lastName, email, password })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      Auth.setUser(data.user);
+      sucEl.textContent = `✓ Account created! Welcome, ${firstName}.`;
+      sucEl.style.display = 'block';
+      document.getElementById('register-form').reset();
+      setTimeout(() => {
+        const redirect = new URLSearchParams(location.search).get('redirect') || 'index.html';
+        window.location.href = redirect;
+      }, 1200);
+    } else {
+      errEl.textContent = data.error || 'Registration failed. Please try again.';
+      errEl.style.display = 'block';
     }
-
-    sucEl.textContent = `✓ Account created! Welcome, ${first}. You can now sign in.`;
-    sucEl.style.display = 'block';
+  } catch {
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = 'block';
+  } finally {
     btn.textContent = 'Create Account';
     btn.disabled = false;
-    document.getElementById('register-form').reset();
-
-    // Auto-switch to login after 1.5s
-    setTimeout(() => switchTab('login'), 1500);
-  }, 600);
+  }
 });
 
 /* ---- Logout ---- */
-document.getElementById('logout-btn').addEventListener('click', () => {
-  Auth.logout();
-  showToast('Signed out successfully');
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await Auth.logout();
   renderAuthState();
 });
 
+/* ---- Init ---- */
 renderAuthState();
-
-/* ---- Google Sign-In callback (overrides auth.js) ---- */
-window.handleCredentialResponse = function(response) {
-  try {
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    const user = { name: payload.name, email: payload.email, picture: payload.picture, provider: 'google' };
-    localStorage.setItem('alchimia_user', JSON.stringify(user));
-    if (typeof DB !== 'undefined') {
-      const existing = DB.customers.getAll().find(c => c.email === user.email);
-      if (!existing) DB.customers.add({ name: user.name, email: user.email, country: 'Unknown', totalOrders: 0, totalSpent: 0 });
-    }
-    showToast(`Welcome, ${user.name}! ✓`);
-    setTimeout(() => {
-      const redirect = new URLSearchParams(location.search).get('redirect') || 'index.html';
-      window.location.href = redirect;
-    }, 800);
-  } catch(err) { console.error('Google sign-in error', err); }
-};
 </script>
 <script src="js/animations.js"></script>
 </body>

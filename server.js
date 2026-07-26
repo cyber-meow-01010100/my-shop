@@ -4,6 +4,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcryptjs');
+const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
 const PORT = 5000;
@@ -11,38 +13,39 @@ const PORT = 5000;
 // ---- Paths ----
 const DATA_DIR = path.join(__dirname, 'data');
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
-// Ensure directories exist
+// Ensure directories/files exist
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 if (!fs.existsSync(PRODUCTS_FILE)) fs.writeFileSync(PRODUCTS_FILE, '[]');
+if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
 
 // ---- JSON store helpers ----
-function readProducts() {
-  try {
-    return JSON.parse(fs.readFileSync(PRODUCTS_FILE, 'utf8'));
-  } catch {
-    return [];
-  }
+function readJSON(file) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
+  catch { return []; }
+}
+function writeJSON(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-function writeProducts(products) {
-  fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(products, null, 2));
-}
+// Shorthand aliases
+const readProducts = () => readJSON(PRODUCTS_FILE);
+const writeProducts = (d) => writeJSON(PRODUCTS_FILE, d);
+const readUsers = () => readJSON(USERS_FILE);
+const writeUsers = (d) => writeJSON(USERS_FILE, d);
 
 // ---- Middleware ----
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(session({
   secret: process.env.SESSION_SECRET || 'alchimia-dev-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 8 * 60 * 60 * 1000 } // 8 hours
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 days
 }));
-
-// Serve uploaded images (registered before API routes so /uploads/* never hits the router)
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 // ---- Multer: image uploads ----
@@ -55,23 +58,33 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp/;
-    cb(null, allowed.test(file.mimetype));
+    cb(null, /jpeg|jpg|png|gif|webp/.test(file.mimetype));
   }
 });
 
-// ---- Auth ----
+// ---- Dynamic config (safely exposes GOOGLE_CLIENT_ID to frontend) ----
+app.get('/js/config.js', (_req, res) => {
+  res.type('application/javascript');
+  res.send(`window.ALCHIMIA_CONFIG = ${JSON.stringify({
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+    CURRENCY: 'USD',
+    CURRENCY_SYMBOL: '$'
+  })};`);
+});
+
+// ============================================================
+// ADMIN AUTH
+// ============================================================
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = 'alchimia2026';
 
-function requireAuth(req, res, next) {
+function requireAdminAuth(req, res, next) {
   if (req.session && req.session.adminLoggedIn) return next();
   return res.status(401).json({ error: 'Unauthorized' });
 }
 
-// POST /api/login.php
 app.post('/api/login.php', (req, res) => {
   const { username, password } = req.body;
   if (username === ADMIN_USER && password === ADMIN_PASS) {
@@ -82,13 +95,12 @@ app.post('/api/login.php', (req, res) => {
   return res.status(401).json({ error: 'Invalid credentials' });
 });
 
-// POST /api/logout.php
 app.post('/api/logout.php', (req, res) => {
-  req.session.destroy(() => {});
+  req.session.adminLoggedIn = false;
+  req.session.username = null;
   res.json({ success: true });
 });
 
-// GET /api/me.php
 app.get('/api/me.php', (req, res) => {
   res.json({
     loggedIn: !!(req.session && req.session.adminLoggedIn),
@@ -96,9 +108,167 @@ app.get('/api/me.php', (req, res) => {
   });
 });
 
-// ---- Products CRUD ----
+// ============================================================
+// USER AUTH
+// ============================================================
 
-// GET /api/products.php  or  GET /api/products.php?id=<id>
+// Helper: strip password before sending user to client
+function safeUser(u) {
+  const { password, ...rest } = u;
+  return rest;
+}
+
+// Helper: get a verified Google payload from an ID token
+async function verifyGoogleToken(credential) {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId) throw new Error('GOOGLE_CLIENT_ID not configured');
+  const client = new OAuth2Client(clientId);
+  const ticket = await client.verifyIdToken({ idToken: credential, audience: clientId });
+  return ticket.getPayload();
+}
+
+// POST /auth/register  — email + password
+app.post('/auth/register', async (req, res) => {
+  const { firstName, lastName, email, password } = req.body;
+
+  if (!firstName || !lastName || !email || !password) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  }
+
+  const emailLc = email.toLowerCase().trim();
+  const users = readUsers();
+
+  const existing = users.find(u => u.email === emailLc);
+  if (existing) {
+    if (existing.provider === 'google') {
+      return res.status(409).json({ error: 'This email is registered with Google Sign-In. Please use "Sign in with Google".' });
+    }
+    return res.status(409).json({ error: 'An account with this email already exists.' });
+  }
+
+  const hash = await bcrypt.hash(password, 10);
+  const user = {
+    id: uuidv4(),
+    firstName: firstName.trim(),
+    lastName: lastName.trim(),
+    name: `${firstName.trim()} ${lastName.trim()}`,
+    email: emailLc,
+    password: hash,
+    picture: null,
+    provider: 'email',
+    createdAt: new Date().toISOString()
+  };
+  users.push(user);
+  writeUsers(users);
+
+  req.session.userId = user.id;
+  req.session.user = safeUser(user);
+  res.status(201).json({ success: true, user: safeUser(user) });
+});
+
+// POST /auth/login  — email + password
+app.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required.' });
+  }
+
+  const emailLc = email.toLowerCase().trim();
+  const users = readUsers();
+  const user = users.find(u => u.email === emailLc);
+
+  if (!user) {
+    return res.status(401).json({ error: 'No account found with that email.' });
+  }
+  if (user.provider === 'google') {
+    return res.status(401).json({ error: 'This account uses Google Sign-In. Please click "Sign in with Google".' });
+  }
+  if (!user.password) {
+    return res.status(401).json({ error: 'Incorrect password.' });
+  }
+
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) {
+    return res.status(401).json({ error: 'Incorrect password.' });
+  }
+
+  req.session.userId = user.id;
+  req.session.user = safeUser(user);
+  res.json({ success: true, user: safeUser(user) });
+});
+
+// POST /auth/google  — verify Google ID token, create or retrieve user
+app.post('/auth/google', async (req, res) => {
+  const { credential } = req.body;
+  if (!credential) return res.status(400).json({ error: 'No credential provided.' });
+
+  let payload;
+  try {
+    payload = await verifyGoogleToken(credential);
+  } catch (err) {
+    console.error('Google token verification failed:', err.message);
+    if (err.message.includes('not configured')) {
+      return res.status(503).json({ error: 'Google Sign-In is not configured on this server. Please add your GOOGLE_CLIENT_ID.' });
+    }
+    return res.status(401).json({ error: 'Invalid Google credential. Please try again.' });
+  }
+
+  const emailLc = payload.email.toLowerCase();
+  const users = readUsers();
+  let user = users.find(u => u.email === emailLc);
+
+  if (!user) {
+    // First Google login — create account automatically
+    user = {
+      id: uuidv4(),
+      firstName: payload.given_name || payload.name.split(' ')[0] || '',
+      lastName: payload.family_name || payload.name.split(' ').slice(1).join(' ') || '',
+      name: payload.name,
+      email: emailLc,
+      picture: payload.picture || null,
+      provider: 'google',
+      googleId: payload.sub,
+      createdAt: new Date().toISOString()
+    };
+    users.push(user);
+    writeUsers(users);
+  } else {
+    // Refresh picture in case it changed
+    if (payload.picture && user.picture !== payload.picture) {
+      user.picture = payload.picture;
+      const idx = users.findIndex(u => u.id === user.id);
+      if (idx !== -1) { users[idx] = user; writeUsers(users); }
+    }
+  }
+
+  req.session.userId = user.id;
+  req.session.user = user;
+  res.json({ success: true, user });
+});
+
+// GET /auth/me  — return current session user
+app.get('/auth/me', (req, res) => {
+  if (req.session && req.session.userId && req.session.user) {
+    return res.json({ loggedIn: true, user: req.session.user });
+  }
+  res.json({ loggedIn: false, user: null });
+});
+
+// POST /auth/logout  — destroy user session
+app.post('/auth/logout', (req, res) => {
+  req.session.userId = null;
+  req.session.user = null;
+  res.json({ success: true });
+});
+
+// ============================================================
+// PRODUCTS CRUD
+// ============================================================
+
 app.get('/api/products.php', (req, res) => {
   const products = readProducts();
   const { id } = req.query;
@@ -110,13 +280,11 @@ app.get('/api/products.php', (req, res) => {
   res.json(products);
 });
 
-// POST /api/products.php
-app.post('/api/products.php', requireAuth, (req, res) => {
+app.post('/api/products.php', requireAdminAuth, (req, res) => {
   const { name, price } = req.body;
   if (!name || price === undefined || price === '') {
     return res.status(400).json({ error: 'Name and price are required' });
   }
-
   const products = readProducts();
   const newProduct = {
     id: 'p' + uuidv4().replace(/-/g, '').slice(0, 14),
@@ -139,61 +307,47 @@ app.post('/api/products.php', requireAuth, (req, res) => {
     icon: req.body.icon || 'leafBottle',
     createdAt: new Date().toISOString()
   };
-
   products.push(newProduct);
   writeProducts(products);
   res.status(201).json({ success: true, id: newProduct.id });
 });
 
-// PUT /api/products.php?id=<id>
-app.put('/api/products.php', requireAuth, (req, res) => {
+app.put('/api/products.php', requireAdminAuth, (req, res) => {
   const { id } = req.query;
   if (!id) return res.status(400).json({ error: 'ID required' });
-
   const products = readProducts();
   const idx = products.findIndex(p => p.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
-
   const p = products[idx];
   const body = req.body;
-
-  // Apply all updatable fields
   const stringFields = ['name', 'category', 'sku', 'unit', 'origin', 'description', 'details', 'icon'];
   stringFields.forEach(f => { if (body[f] !== undefined) p[f] = body[f]; });
-
   if (body.price !== undefined) p.price = Number(body.price);
   if (body.stock !== undefined) p.stock = Number(body.stock);
-  if (body.discount_price !== undefined) {
-    p.discount_price = body.discount_price ? Number(body.discount_price) : null;
-  }
+  if (body.discount_price !== undefined) p.discount_price = body.discount_price ? Number(body.discount_price) : null;
   if (body.featured !== undefined) p.featured = body.featured === true || body.featured === 'true';
   if (body.new_arrival !== undefined) p.new_arrival = body.new_arrival === true || body.new_arrival === 'true';
   if (body.best_seller !== undefined) p.best_seller = body.best_seller === true || body.best_seller === 'true';
   if (body.active !== undefined) p.active = body.active === true || body.active === 'true' || body.active === 1;
   if (body.tags !== undefined) p.tags = Array.isArray(body.tags) ? body.tags : (body.tags ? [body.tags] : []);
   if (body.images !== undefined) p.images = Array.isArray(body.images) ? body.images : (body.images ? [body.images] : []);
-
   products[idx] = p;
   writeProducts(products);
   res.json({ success: true });
 });
 
-// DELETE /api/products.php?id=<id>
-app.delete('/api/products.php', requireAuth, (req, res) => {
+app.delete('/api/products.php', requireAdminAuth, (req, res) => {
   const { id } = req.query;
   if (!id) return res.status(400).json({ error: 'ID required' });
-
   const products = readProducts();
   const filtered = products.filter(p => p.id !== id);
   if (filtered.length === products.length) return res.status(404).json({ error: 'Not found' });
-
   writeProducts(filtered);
   res.json({ success: true });
 });
 
 // ---- Image upload ----
-// POST /api/upload.php  (field name: "images")
-app.post('/api/upload.php', requireAuth, upload.array('images', 10), (req, res) => {
+app.post('/api/upload.php', requireAdminAuth, upload.array('images', 10), (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'No files uploaded' });
   }
@@ -201,10 +355,13 @@ app.post('/api/upload.php', requireAuth, upload.array('images', 10), (req, res) 
   res.json({ success: true, filePaths });
 });
 
-// ---- Static files (registered AFTER API routes so /api/*.php routes are handled first) ----
+// ---- Static files (after all routes so API always wins) ----
 app.use(express.static(__dirname, { index: 'index.html' }));
 
 // ---- Start ----
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Buy Alchimia running on http://0.0.0.0:${PORT}`);
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    console.warn('Warning: GOOGLE_CLIENT_ID is not set — Google Sign-In will be unavailable.');
+  }
 });
