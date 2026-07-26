@@ -807,7 +807,7 @@ document.getElementById('btn-print-invoice').addEventListener('click', () => {
 
   const settings  = DB.settings.get();
   const storeName = settings.storeName || 'Buy Alchimia';
-  const storeAddr = settings.address   || 'Kurunegala, Sri Lanka';
+  const storeAddr = settings.address   || 'Galle, Sri Lanka';
   const storeEmail = settings.email    || 'hello@buyalchimia.com';
 
   const itemsHTML = (order.items || []).map(item =>
