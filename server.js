@@ -11,16 +11,18 @@ const app = express();
 const PORT = 5000;
 
 // ---- Paths ----
-const DATA_DIR = path.join(__dirname, 'data');
-const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const DATA_DIR       = path.join(__dirname, 'data');
+const PRODUCTS_FILE  = path.join(DATA_DIR, 'products.json');
+const USERS_FILE     = path.join(DATA_DIR, 'users.json');
+const ANALYTICS_FILE = path.join(DATA_DIR, 'analytics.json');
+const UPLOADS_DIR    = path.join(__dirname, 'uploads');
 
 // Ensure directories/files exist
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!fs.existsSync(DATA_DIR))    fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-if (!fs.existsSync(PRODUCTS_FILE)) fs.writeFileSync(PRODUCTS_FILE, '[]');
-if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
+if (!fs.existsSync(PRODUCTS_FILE))  fs.writeFileSync(PRODUCTS_FILE, '[]');
+if (!fs.existsSync(USERS_FILE))     fs.writeFileSync(USERS_FILE, '[]');
+if (!fs.existsSync(ANALYTICS_FILE)) fs.writeFileSync(ANALYTICS_FILE, JSON.stringify({ pageviews: [], events: [] }));
 
 // ---- JSON store helpers ----
 function readJSON(file) {
@@ -32,10 +34,38 @@ function writeJSON(file, data) {
 }
 
 // Shorthand aliases
-const readProducts = () => readJSON(PRODUCTS_FILE);
+const readProducts  = () => readJSON(PRODUCTS_FILE);
 const writeProducts = (d) => writeJSON(PRODUCTS_FILE, d);
-const readUsers = () => readJSON(USERS_FILE);
-const writeUsers = (d) => writeJSON(USERS_FILE, d);
+const readUsers     = () => readJSON(USERS_FILE);
+const writeUsers    = (d) => writeJSON(USERS_FILE, d);
+
+function readAnalytics() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(ANALYTICS_FILE, 'utf8'));
+    return {
+      pageviews: Array.isArray(raw.pageviews) ? raw.pageviews : [],
+      events:    Array.isArray(raw.events)    ? raw.events    : [],
+    };
+  } catch { return { pageviews: [], events: [] }; }
+}
+function writeAnalytics(d) {
+  fs.writeFileSync(ANALYTICS_FILE, JSON.stringify(d));
+}
+
+// In-memory write queue to avoid concurrent file writes under rapid traffic
+let analyticsWriteTimer = null;
+let analyticsPending    = null;
+
+function queueAnalyticsWrite(data) {
+  analyticsPending = data;
+  if (!analyticsWriteTimer) {
+    analyticsWriteTimer = setTimeout(() => {
+      if (analyticsPending) writeAnalytics(analyticsPending);
+      analyticsPending    = null;
+      analyticsWriteTimer = null;
+    }, 200);
+  }
+}
 
 // ---- Middleware ----
 app.use(express.json());
@@ -353,6 +383,127 @@ app.post('/api/upload.php', requireAdminAuth, upload.array('images', 10), (req, 
   }
   const filePaths = req.files.map(f => `/uploads/${f.filename}`);
   res.json({ success: true, filePaths });
+});
+
+// ============================================================
+// ANALYTICS
+// ============================================================
+
+// Safely parse a hostname from a URL string
+function safeHostname(url) {
+  if (!url) return 'direct';
+  try { return new URL(url).hostname || 'direct'; }
+  catch { return 'direct'; }
+}
+
+// POST /api/analytics/event — public, receives pageviews and clicks
+app.post('/api/analytics/event', (req, res) => {
+  try {
+    const { type, url, referrer, device, target, label } = req.body;
+    if (!type || !url) return res.status(400).json({ ok: false });
+
+    const data = readAnalytics();
+    const ts   = new Date().toISOString();
+
+    if (type === 'pageview') {
+      data.pageviews.push({ url, referrer: referrer || '', device: device || 'desktop', ts });
+      if (data.pageviews.length > 50000) data.pageviews = data.pageviews.slice(-50000);
+    } else if (type === 'click') {
+      data.events.push({ target: target || '', label: (label || '').slice(0, 120), url, ts });
+      if (data.events.length > 50000) data.events = data.events.slice(-50000);
+    }
+
+    queueAnalyticsWrite(data);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Analytics event error:', err.message);
+    res.status(500).json({ ok: false });
+  }
+});
+
+// GET /api/analytics/stats — admin only, returns aggregated traffic data
+app.get('/api/analytics/stats', requireAdminAuth, (req, res) => {
+  try {
+    const days   = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 365);
+    const data   = readAnalytics();
+    const cutoff = new Date(Date.now() - days * 86400000);
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    const recentViews  = data.pageviews.filter(v => new Date(v.ts) >= cutoff);
+    const recentEvents = data.events.filter(e => new Date(e.ts) >= cutoff);
+
+    // --- Page views over time (per day) ---
+    const viewsByDay = {};
+    recentViews.forEach(v => {
+      const day = v.ts.slice(0, 10);
+      viewsByDay[day] = (viewsByDay[day] || 0) + 1;
+    });
+    const dayLabels = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      dayLabels.push(d.toISOString().slice(0, 10));
+    }
+    const viewsTimeline = dayLabels.map(d => ({
+      date:  d,
+      label: new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      views: viewsByDay[d] || 0,
+    }));
+
+    // --- Top pages ---
+    const pageCounts = {};
+    recentViews.forEach(v => {
+      const page = v.url.split('?')[0];
+      pageCounts[page] = (pageCounts[page] || 0) + 1;
+    });
+    const topPages = Object.entries(pageCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([page, count]) => ({ page, count }));
+
+    // --- Device breakdown ---
+    const devices = { desktop: 0, mobile: 0, tablet: 0 };
+    recentViews.forEach(v => { devices[v.device || 'desktop'] = (devices[v.device || 'desktop'] || 0) + 1; });
+
+    // --- Top click events ---
+    const clickMap = {};
+    recentEvents.forEach(e => {
+      const key = e.target + (e.label ? ' · ' + e.label : '');
+      clickMap[key] = (clickMap[key] || 0) + 1;
+    });
+    const topClicks = Object.entries(clickMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([action, count]) => ({ action, count }));
+
+    // --- Top referrers ---
+    const refMap = {};
+    recentViews.forEach(v => {
+      const source = safeHostname(v.referrer) || 'direct';
+      refMap[source] = (refMap[source] || 0) + 1;
+    });
+    const topReferrers = Object.entries(refMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([source, count]) => ({ source, count }));
+
+    // --- Summary numbers ---
+    const todayViews = data.pageviews.filter(v => v.ts.slice(0, 10) === todayStr).length;
+
+    res.json({
+      totalViews:    recentViews.length,
+      totalEvents:   recentEvents.length,
+      todayViews,
+      allTimeViews:  data.pageviews.length,
+      viewsTimeline,
+      topPages,
+      devices,
+      topClicks,
+      topReferrers,
+    });
+  } catch (err) {
+    console.error('Analytics stats error:', err.message);
+    res.status(500).json({ error: 'Failed to load analytics' });
+  }
 });
 
 // ---- Static files (after all routes so API always wins) ----

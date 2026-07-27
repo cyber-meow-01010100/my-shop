@@ -9,149 +9,102 @@
 <style>
   /* ---- Period Tabs ---- */
   .period-tabs {
-    display: flex;
-    gap: 4px;
+    display: flex; gap: 4px;
     background: rgba(255,255,255,.04);
-    border-radius: var(--radius-sm);
-    padding: 4px;
-    border: 1px solid var(--admin-border);
-    width: fit-content;
+    border-radius: var(--radius-sm); padding: 4px;
+    border: 1px solid var(--admin-border); width: fit-content;
   }
   .period-tab {
-    padding: .42rem 1.1rem;
-    border-radius: 4px;
-    font-size: .82rem;
-    font-weight: 600;
-    color: var(--admin-muted);
-    background: none;
-    cursor: pointer;
-    transition: all .18s ease;
-    letter-spacing: .02em;
+    padding: .42rem 1.1rem; border-radius: 4px; font-size: .82rem;
+    font-weight: 600; color: var(--admin-muted); background: none;
+    cursor: pointer; transition: all .18s ease; letter-spacing: .02em;
   }
   .period-tab.active {
     background: linear-gradient(135deg, rgba(74,222,128,.18), rgba(34,197,94,.1));
-    color: var(--admin-accent);
-    box-shadow: 0 0 0 1px rgba(74,222,128,.25);
+    color: var(--admin-accent); box-shadow: 0 0 0 1px rgba(74,222,128,.25);
   }
-  .period-tab:hover:not(.active) {
-    background: rgba(255,255,255,.07);
-    color: var(--admin-text);
-  }
+  .period-tab:hover:not(.active) { background: rgba(255,255,255,.07); color: var(--admin-text); }
 
   /* ---- Chart containers ---- */
-  .chart-container-main {
-    position: relative;
-    height: 320px;
-  }
-  .chart-container-sm {
-    position: relative;
-    height: 240px;
-  }
+  .chart-container-main { position: relative; height: 280px; }
+  .chart-container-sm   { position: relative; height: 220px; }
 
-  /* ---- Charts grid ---- */
+  /* ---- Grids ---- */
   .charts-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 20px; margin-bottom: 20px;
+  }
+  .charts-row-3 {
+    display: grid; grid-template-columns: 1.6fr 1fr;
+    gap: 20px; margin-bottom: 20px;
   }
   @media (max-width: 860px) {
-    .charts-row { grid-template-columns: 1fr; }
+    .charts-row, .charts-row-3 { grid-template-columns: 1fr; }
   }
 
-  /* ---- Top products table ---- */
+  /* ---- Section divider ---- */
+  .section-divider {
+    display: flex; align-items: center; gap: 14px;
+    margin: 32px 0 20px;
+  }
+  .section-divider h2 {
+    font-size: 1rem; font-weight: 700; color: var(--admin-text);
+    white-space: nowrap; margin: 0;
+  }
+  .section-divider-line { flex: 1; height: 1px; background: var(--admin-border); }
+
+  /* ---- Rank badges ---- */
   .product-rank {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px; height: 24px;
-    border-radius: 50%;
-    font-size: .72rem;
-    font-weight: 700;
-    flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%;
+    font-size: .72rem; font-weight: 700; flex-shrink: 0;
   }
   .rank-1 { background: rgba(212,163,115,.25); color: var(--gold); }
   .rank-2 { background: rgba(148,163,184,.15); color: #94a3b8; }
   .rank-3 { background: rgba(180,83,9,.15); color: #b45309; }
   .rank-other { background: rgba(255,255,255,.06); color: var(--admin-muted); }
 
-  /* ---- Revenue bar in table ---- */
-  .rev-bar-wrap {
-    flex: 1;
-    height: 6px;
-    background: rgba(255,255,255,.06);
-    border-radius: 3px;
-    overflow: hidden;
-    min-width: 60px;
-  }
-  .rev-bar {
-    height: 100%;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--admin-accent), #22c55e);
-  }
+  /* ---- Bar in table ---- */
+  .rev-bar-wrap { flex: 1; height: 6px; background: rgba(255,255,255,.06); border-radius: 3px; overflow: hidden; min-width: 60px; }
+  .rev-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--admin-accent), #22c55e); }
+  .sky-bar { background: linear-gradient(90deg, #38bdf8, #6366f1); }
 
   /* ---- Insight chips ---- */
-  .insight-chips {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 20px;
-    margin-bottom: 24px;
-  }
+  .insight-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; margin-bottom: 24px; }
   .insight-chip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background: rgba(255,255,255,.04);
-    border: 1px solid var(--admin-border);
-    border-radius: var(--radius);
-    font-size: .8rem;
+    display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+    background: rgba(255,255,255,.04); border: 1px solid var(--admin-border);
+    border-radius: var(--radius); font-size: .8rem;
   }
-  .insight-chip-icon {
-    font-size: 1.2rem;
-  }
-  .insight-chip-val {
-    font-weight: 700;
-    color: #fff;
-  }
-  .insight-chip-label {
-    color: var(--admin-muted);
-    font-size: .72rem;
+  .insight-chip-icon { font-size: 1.2rem; }
+  .insight-chip-val  { font-weight: 700; color: #fff; }
+  .insight-chip-label { color: var(--admin-muted); font-size: .72rem; }
+
+  /* ---- Chart legend ---- */
+  .chart-legend { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .legend-item  { display: flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--admin-muted); }
+  .legend-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ---- Period badge ---- */
+  .period-badge {
+    font-family: var(--mono); font-size: .75rem; color: var(--admin-accent);
+    background: rgba(74,222,128,.1); padding: 3px 10px; border-radius: 20px;
   }
 
-  /* ---- Chart card header with legend ---- */
-  .chart-legend {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: .75rem;
-    color: var(--admin-muted);
-  }
-  .legend-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  /* ---- Device legend ---- */
+  #device-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; justify-content: center; }
 
-  /* ---- Animated number counter ---- */
-  .stat-value[data-target] {
-    transition: none;
+  /* ---- Loading overlay ---- */
+  .traffic-loading {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 80px; color: var(--admin-muted); font-size: .88rem; gap: 8px;
   }
-
-  /* ---- Tooltip custom ---- */
-  .chart-tooltip-line {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    font-size: .8rem;
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.1);
+    border-top-color: var(--admin-accent); border-radius: 50%;
+    animation: spin .7s linear infinite;
   }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -163,32 +116,190 @@
     <div class="page-header">
       <div class="page-header-left">
         <h1>Analytics</h1>
-        <p>Store performance — revenue, orders and product trends</p>
+        <p>Site traffic, visitor behaviour &amp; store performance</p>
       </div>
       <div class="page-header-actions">
-        <!-- Period selector -->
-        <div class="period-tabs" role="tablist" aria-label="Time period">
-          <button class="period-tab active" data-days="7"  onclick="setPeriod(7,this)">7 days</button>
-          <button class="period-tab"        data-days="30" onclick="setPeriod(30,this)">30 days</button>
-          <button class="period-tab"        data-days="90" onclick="setPeriod(90,this)">90 days</button>
+        <div class="period-tabs" role="tablist">
+          <button class="period-tab active" data-days="7"  onclick="setPeriod(7,this)">7d</button>
+          <button class="period-tab"        data-days="30" onclick="setPeriod(30,this)">30d</button>
+          <button class="period-tab"        data-days="90" onclick="setPeriod(90,this)">90d</button>
         </div>
         <button class="btn btn-secondary" onclick="exportReport()">📥 Export</button>
       </div>
     </div>
 
-    <!-- ===================== STATS ROW ===================== -->
-    <div class="stats-grid" id="stats-grid">
+    <!-- ===================== TRAFFIC STATS ROW ===================== -->
+    <div class="section-divider">
+      <h2>📡 Site Traffic</h2>
+      <div class="section-divider-line"></div>
+      <span id="traffic-refresh-time" style="font-size:.72rem;color:var(--admin-muted);white-space:nowrap;"></span>
+    </div>
+
+    <div class="stats-grid" id="traffic-stats-grid">
+      <div class="stat-card indigo">
+        <div class="stat-icon">👁️</div>
+        <div class="stat-label">Page Views</div>
+        <div class="stat-value" id="t-total-views">—</div>
+        <div class="stat-change" id="t-total-views-sub">Selected period</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">📅</div>
+        <div class="stat-label">Today's Views</div>
+        <div class="stat-value" id="t-today-views">—</div>
+        <div class="stat-change up">Today so far</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-icon">🖱️</div>
+        <div class="stat-label">Click Events</div>
+        <div class="stat-value" id="t-clicks">—</div>
+        <div class="stat-change" id="t-clicks-sub">Selected period</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">🌍</div>
+        <div class="stat-label">All-Time Views</div>
+        <div class="stat-value" id="t-alltime">—</div>
+        <div class="stat-change">Since tracking began</div>
+      </div>
+    </div>
+
+    <!-- ===================== TRAFFIC CHART ===================== -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Page Views Over Time</div>
+          <div class="card-subtitle" id="traffic-period-label">Last 30 days</div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#38bdf8;"></div> Page Views
+          </div>
+          <span class="period-badge" id="traffic-total-badge">0 views</span>
+        </div>
+      </div>
+      <div id="traffic-chart-wrap">
+        <div class="chart-container-main">
+          <canvas id="trafficChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== TOP PAGES + DEVICE BREAKDOWN ===================== -->
+    <div class="charts-row-3">
+
+      <!-- Top pages table -->
+      <div class="card" style="padding:0;">
+        <div class="card-header" style="padding:20px 22px 0;">
+          <div>
+            <div class="card-title">Top Pages</div>
+            <div class="card-subtitle">Most visited URLs this period</div>
+          </div>
+        </div>
+        <div class="table-wrap" style="border:none;border-radius:0;">
+          <table id="top-pages-table">
+            <thead>
+              <tr>
+                <th style="width:32px;">#</th>
+                <th>Page</th>
+                <th style="text-align:right;">Views</th>
+                <th style="min-width:120px;">Share</th>
+              </tr>
+            </thead>
+            <tbody id="top-pages-tbody">
+              <tr><td colspan="4" style="padding:32px;text-align:center;"><div class="traffic-loading"><div class="spinner"></div> Loading…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Device doughnut -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Device Types</div>
+            <div class="card-subtitle">Visitor device breakdown</div>
+          </div>
+        </div>
+        <div class="chart-container-sm">
+          <canvas id="deviceChart"></canvas>
+        </div>
+        <div id="device-legend"></div>
+      </div>
+
+    </div>
+
+    <!-- ===================== TOP CLICKS + REFERRERS ===================== -->
+    <div class="charts-row">
+
+      <!-- Top click events -->
+      <div class="card" style="padding:0;">
+        <div class="card-header" style="padding:20px 22px 0;">
+          <div>
+            <div class="card-title">Top Click Events</div>
+            <div class="card-subtitle">What visitors interact with most</div>
+          </div>
+        </div>
+        <div class="table-wrap" style="border:none;border-radius:0;">
+          <table id="clicks-table">
+            <thead>
+              <tr>
+                <th style="width:32px;">#</th>
+                <th>Action</th>
+                <th style="text-align:right;">Clicks</th>
+                <th style="min-width:100px;">Share</th>
+              </tr>
+            </thead>
+            <tbody id="clicks-tbody">
+              <tr><td colspan="4" style="padding:32px;text-align:center;"><div class="traffic-loading"><div class="spinner"></div> Loading…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Top referrers -->
+      <div class="card" style="padding:0;">
+        <div class="card-header" style="padding:20px 22px 0;">
+          <div>
+            <div class="card-title">Traffic Sources</div>
+            <div class="card-subtitle">Where visitors come from</div>
+          </div>
+        </div>
+        <div class="table-wrap" style="border:none;border-radius:0;">
+          <table id="referrers-table">
+            <thead>
+              <tr>
+                <th style="width:32px;">#</th>
+                <th>Source</th>
+                <th style="text-align:right;">Visits</th>
+                <th style="min-width:100px;">Share</th>
+              </tr>
+            </thead>
+            <tbody id="referrers-tbody">
+              <tr><td colspan="4" style="padding:32px;text-align:center;"><div class="traffic-loading"><div class="spinner"></div> Loading…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===================== ORDER / REVENUE STATS ===================== -->
+    <div class="section-divider" style="margin-top:16px;">
+      <h2>💰 Orders &amp; Revenue</h2>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <div class="stats-grid" id="order-stats-grid">
       <div class="stat-card green">
         <div class="stat-icon">💰</div>
         <div class="stat-label">Total Revenue</div>
         <div class="stat-value" id="s-total-rev">$0</div>
-        <div class="stat-change up" id="s-total-rev-sub">All time</div>
+        <div class="stat-change up">All time</div>
       </div>
       <div class="stat-card gold">
         <div class="stat-icon">📅</div>
         <div class="stat-label">Monthly Revenue</div>
         <div class="stat-value" id="s-month-rev">$0</div>
-        <div class="stat-change up" id="s-month-rev-sub">This month</div>
+        <div class="stat-change up">This month</div>
       </div>
       <div class="stat-card indigo">
         <div class="stat-icon">🛒</div>
@@ -200,14 +311,14 @@
         <div class="stat-icon">📊</div>
         <div class="stat-label">Avg Order Value</div>
         <div class="stat-value" id="s-avg">$0</div>
-        <div class="stat-change" id="s-avg-sub">Per completed order</div>
+        <div class="stat-change">Per completed order</div>
       </div>
     </div>
 
     <!-- Insight chips -->
     <div class="insight-chips" id="insight-chips"></div>
 
-    <!-- ===================== MAIN REVENUE CHART ===================== -->
+    <!-- Revenue chart -->
     <div class="card" style="margin-bottom:20px;">
       <div class="card-header">
         <div>
@@ -215,15 +326,9 @@
           <div class="card-subtitle" id="revenue-period-label">Last 30 days</div>
         </div>
         <div class="chart-legend">
-          <div class="legend-item">
-            <div class="legend-dot" style="background:#4ade80;"></div>
-            Revenue
-          </div>
-          <div class="legend-item">
-            <div class="legend-dot" style="background:#6366f1;"></div>
-            Orders
-          </div>
-          <div style="font-family:var(--mono);font-size:.75rem;color:var(--admin-accent);background:rgba(74,222,128,.1);padding:3px 10px;border-radius:20px;" id="period-total-badge">$0 total</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#4ade80;"></div> Revenue</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#6366f1;"></div> Orders</div>
+          <span class="period-badge" id="period-total-badge">$0 total</span>
         </div>
       </div>
       <div class="chart-container-main">
@@ -231,10 +336,8 @@
       </div>
     </div>
 
-    <!-- ===================== SECOND ROW: 2 CHARTS ===================== -->
+    <!-- Status + products row -->
     <div class="charts-row">
-
-      <!-- Doughnut: Orders by status -->
       <div class="card">
         <div class="card-header">
           <div>
@@ -247,8 +350,6 @@
         </div>
         <div id="status-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;justify-content:center;"></div>
       </div>
-
-      <!-- Bar: Top 5 products -->
       <div class="card">
         <div class="card-header">
           <div>
@@ -260,10 +361,9 @@
           <canvas id="productsChart"></canvas>
         </div>
       </div>
-
     </div>
 
-    <!-- ===================== TOP PRODUCTS TABLE ===================== -->
+    <!-- Top products table -->
     <div class="card" style="padding:0;">
       <div class="card-header" style="padding:20px 22px 0;">
         <div>
@@ -283,46 +383,40 @@
             </tr>
           </thead>
           <tbody id="top-products-tbody">
-            <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--admin-muted);">Loading…</td></tr>
+            <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--admin-muted);">No order data yet.</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /.admin-content -->
+</div><!-- /.admin-main -->
 
-<!-- Chart.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="../js/db.js"></script>
 <script src="js/admin-auth.js"></script>
 <script src="js/admin-layout.js"></script>
 <script>
 /* ============================================================
-   ANALYTICS PAGE
+   ANALYTICS PAGE — real traffic + order analytics
    ============================================================ */
 
 Chart.defaults.color = '#8892a4';
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.font.size = 12;
 
-let revenueChart = null;
-let statusChart  = null;
+let revenueChart  = null;
+let statusChart   = null;
 let productsChart = null;
-let currentDays = 30;
+let trafficChart  = null;
+let deviceChart   = null;
+let currentDays   = 30;
 
-/* ---- Palette ---- */
 const COLORS = {
-  green:   '#4ade80',
-  indigo:  '#6366f1',
-  gold:    '#f59e0b',
-  red:     '#ef4444',
-  sky:     '#38bdf8',
-  purple:  '#a78bfa',
-  rose:    '#fb7185',
-  orange:  '#fb923c',
+  green:  '#4ade80', indigo: '#6366f1', gold:   '#f59e0b',
+  red:    '#ef4444', sky:    '#38bdf8', purple: '#a78bfa',
+  rose:   '#fb7185', orange: '#fb923c',
 };
-
 const STATUS_PALETTE = {
   pending:    { color: COLORS.gold,   label: 'Pending' },
   processing: { color: COLORS.sky,    label: 'Processing' },
@@ -336,8 +430,8 @@ const STATUS_PALETTE = {
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
   AdminAuth.guard();
-  renderAdminLayout('Analytics', 'Store performance');
-  buildAll(30);
+  renderAdminLayout('Analytics', 'Traffic & performance');
+  buildAll(currentDays);
 });
 
 function setPeriod(days, btn) {
@@ -348,7 +442,8 @@ function setPeriod(days, btn) {
 }
 
 function buildAll(days) {
-  buildStats();
+  loadTrafficStats(days);
+  buildOrderStats();
   buildInsights(days);
   buildRevenueChart(days);
   buildStatusChart();
@@ -357,43 +452,265 @@ function buildAll(days) {
 }
 
 /* ============================================================
-   STAT CARDS
+   TRAFFIC STATS (from server API)
    ============================================================ */
-function buildStats() {
-  const stats = DB.orders.stats();
-  const orders = DB.orders.getAll().filter(o => o.status !== 'cancelled');
-  const avg = orders.length ? stats.revenue / orders.length : 0;
+async function loadTrafficStats(days) {
+  try {
+    const res  = await fetch(`/api/analytics/stats?days=${days}`);
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
 
-  animateCount('s-total-rev',  stats.revenue,        true);
-  animateCount('s-month-rev',  stats.monthlyRevenue,  true);
-  animateCount('s-orders',     stats.total,           false);
-  animateCount('s-avg',        avg,                   true);
+    animateCount('t-total-views', data.totalViews,  false);
+    animateCount('t-today-views', data.todayViews,  false);
+    animateCount('t-clicks',      data.totalEvents, false);
+    animateCount('t-alltime',     data.allTimeViews,false);
 
-  document.getElementById('s-orders-sub').textContent = `${stats.pending} pending · ${stats.processing} processing`;
-  document.getElementById('s-orders-sub').className = 'stat-change ' + (stats.pending > 0 ? 'up' : '');
+    document.getElementById('t-total-views-sub').textContent  = `Last ${days} days`;
+    document.getElementById('t-clicks-sub').textContent       = `Last ${days} days`;
+    document.getElementById('traffic-period-label').textContent = `Last ${days} days`;
+    document.getElementById('traffic-total-badge').textContent = data.totalViews.toLocaleString() + ' views';
+    document.getElementById('traffic-refresh-time').textContent =
+      'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    buildTrafficChart(data.viewsTimeline);
+    buildDeviceChart(data.devices);
+    buildTopPagesTable(data.topPages);
+    buildClicksTable(data.topClicks);
+    buildReferrersTable(data.topReferrers);
+  } catch (err) {
+    console.error('Traffic stats load error:', err);
+    document.getElementById('t-total-views').textContent = 'Err';
+  }
 }
 
-function animateCount(id, target, isCurrency) {
-  const el = document.getElementById(id);
-  const start = 0;
-  const duration = 900;
-  const startTime = performance.now();
+/* ---- Traffic line chart ---- */
+function buildTrafficChart(timeline) {
+  const labels = timeline.map(d => d.label);
+  const views  = timeline.map(d => d.views);
 
-  function step(now) {
-    const elapsed = now - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    // Ease out expo
-    const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-    const current = start + (target - start) * eased;
-    el.textContent = isCurrency ? fmtCurrency(current) : Math.round(current).toLocaleString();
-    if (progress < 1) requestAnimationFrame(step);
+  const ctx = document.getElementById('trafficChart').getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 280);
+  grad.addColorStop(0,   'rgba(56,189,248,0.35)');
+  grad.addColorStop(0.6, 'rgba(56,189,248,0.08)');
+  grad.addColorStop(1,   'rgba(56,189,248,0)');
+
+  if (trafficChart) trafficChart.destroy();
+  trafficChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Page Views',
+        data: views,
+        borderColor: COLORS.sky,
+        borderWidth: 2.5,
+        pointBackgroundColor: COLORS.sky,
+        pointBorderColor: '#13151e',
+        pointBorderWidth: 2,
+        pointRadius: currentDays <= 7 ? 5 : currentDays <= 30 ? 4 : 2,
+        pointHoverRadius: 7,
+        fill: true,
+        backgroundColor: grad,
+        tension: 0.42,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(26,29,46,0.97)',
+          borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+          titleColor: '#e2e8f0', bodyColor: '#8892a4',
+          padding: 14, cornerRadius: 10,
+          callbacks: { label: ctx => '  Views: ' + ctx.raw },
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+          ticks: { maxTicksLimit: currentDays <= 7 ? 7 : 10, font: { size: 11 } },
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+          ticks: { callback: v => Number.isInteger(v) ? v : '', font: { size: 11 } },
+          beginAtZero: true,
+        },
+      },
+    },
+  });
+}
+
+/* ---- Device doughnut ---- */
+function buildDeviceChart(devices) {
+  const labels = ['Desktop', 'Mobile', 'Tablet'];
+  const values = [devices.desktop || 0, devices.mobile || 0, devices.tablet || 0];
+  const colors = [COLORS.indigo, COLORS.sky, COLORS.purple];
+
+  const ctx = document.getElementById('deviceChart').getContext('2d');
+  if (deviceChart) deviceChart.destroy();
+  deviceChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderColor: 'rgba(26,29,46,0.9)', borderWidth: 3,
+        hoverOffset: 8,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(26,29,46,0.97)',
+          borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+          titleColor: '#e2e8f0', bodyColor: '#8892a4',
+          padding: 12, cornerRadius: 10,
+          callbacks: {
+            label(ctx) {
+              const total = ctx.dataset.data.reduce((s,v)=>s+v,0);
+              const pct = total ? Math.round(ctx.raw/total*100) : 0;
+              return ` ${ctx.label}: ${ctx.raw.toLocaleString()} (${pct}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const total = values.reduce((s,v)=>s+v,0);
+  document.getElementById('device-legend').innerHTML = labels.map((l,i) => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${colors[i]};width:10px;height:10px;"></div>
+      <span style="color:var(--admin-text);">${l}</span>
+      <span style="font-weight:600;color:#fff;">${values[i].toLocaleString()}</span>
+      <span style="color:var(--admin-muted);font-size:.68rem;">${total ? Math.round(values[i]/total*100) : 0}%</span>
+    </div>`).join('');
+}
+
+/* ---- Top pages table ---- */
+function buildTopPagesTable(pages) {
+  const tbody = document.getElementById('top-pages-tbody');
+  if (!pages || !pages.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="padding:32px;text-align:center;color:var(--admin-muted);">No page view data yet — visit your storefront to start tracking.</td></tr>`;
+    return;
   }
-  requestAnimationFrame(step);
+  const max = pages[0].count;
+  tbody.innerHTML = pages.map((p, i) => {
+    const pct = Math.round(p.count / max * 100);
+    const rankClass = ['rank-1','rank-2','rank-3'][i] || 'rank-other';
+    const label = p.page === '/' || p.page === '/index.html' ? '🏠 Home' : p.page.replace(/^\/|\.html$/g,'');
+    return `<tr>
+      <td><span class="product-rank ${rankClass}">${i+1}</span></td>
+      <td>
+        <div style="font-weight:500;color:var(--admin-text);font-size:.88rem;">${escHtml(label)}</div>
+        <div style="font-size:.7rem;color:var(--admin-muted);font-family:var(--mono);">${escHtml(p.page)}</div>
+      </td>
+      <td style="text-align:right;font-weight:700;color:#fff;">${p.count.toLocaleString()}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="rev-bar-wrap"><div class="rev-bar sky-bar" style="width:${pct}%;"></div></div>
+          <span style="font-size:.72rem;color:var(--admin-muted);min-width:28px;">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---- Top clicks table ---- */
+function buildClicksTable(clicks) {
+  const tbody = document.getElementById('clicks-tbody');
+  if (!clicks || !clicks.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="padding:32px;text-align:center;color:var(--admin-muted);">No click events yet.</td></tr>`;
+    return;
+  }
+  const max = clicks[0].count;
+  const ICONS = {
+    add_to_cart:'🛒', quick_view:'👁️', product_click:'📦', wishlist:'♥',
+    hero_cta_shop:'🌿', hero_cta_story:'📖', whatsapp_fab:'💬',
+    category_filter:'🏷️', nav_link:'🔗', newsletter_subscribe:'📧',
+    checkout_start:'💳', search:'🔍', add_to_cart_detail:'🛒',
+  };
+  tbody.innerHTML = clicks.map((c, i) => {
+    const pct = Math.round(c.count / max * 100);
+    const rankClass = ['rank-1','rank-2','rank-3'][i] || 'rank-other';
+    const parts = c.action.split(' · ');
+    const icon  = ICONS[parts[0]] || '🖱️';
+    const label = parts[0].replace(/_/g,' ');
+    const sub   = parts[1] || '';
+    return `<tr>
+      <td><span class="product-rank ${rankClass}">${i+1}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span>${icon}</span>
+          <div>
+            <div style="font-weight:500;color:var(--admin-text);font-size:.88rem;text-transform:capitalize;">${escHtml(label)}</div>
+            ${sub ? `<div style="font-size:.72rem;color:var(--admin-muted);">${escHtml(sub)}</div>` : ''}
+          </div>
+        </div>
+      </td>
+      <td style="text-align:right;font-weight:700;color:#fff;">${c.count.toLocaleString()}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="rev-bar-wrap"><div class="rev-bar" style="width:${pct}%;"></div></div>
+          <span style="font-size:.72rem;color:var(--admin-muted);min-width:28px;">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---- Referrers table ---- */
+function buildReferrersTable(refs) {
+  const tbody = document.getElementById('referrers-tbody');
+  if (!refs || !refs.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="padding:32px;text-align:center;color:var(--admin-muted);">No referrer data yet.</td></tr>`;
+    return;
+  }
+  const max = refs[0].count;
+  const ICONS = { direct:'🔖', google:'🔍', facebook:'👥', instagram:'📸', twitter:'🐦', 't.co':'🐦' };
+  tbody.innerHTML = refs.map((r, i) => {
+    const pct = Math.round(r.count / max * 100);
+    const rankClass = ['rank-1','rank-2','rank-3'][i] || 'rank-other';
+    const icon = ICONS[r.source] || (r.source === 'direct' ? '🔖' : '🌐');
+    return `<tr>
+      <td><span class="product-rank ${rankClass}">${i+1}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span>${icon}</span>
+          <span style="font-weight:500;color:var(--admin-text);font-size:.88rem;">${escHtml(r.source)}</span>
+        </div>
+      </td>
+      <td style="text-align:right;font-weight:700;color:#fff;">${r.count.toLocaleString()}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="rev-bar-wrap"><div class="rev-bar sky-bar" style="width:${pct}%;"></div></div>
+          <span style="font-size:.72rem;color:var(--admin-muted);min-width:28px;">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 /* ============================================================
-   INSIGHT CHIPS
+   ORDER STATS (from localStorage via DB)
    ============================================================ */
+function buildOrderStats() {
+  const stats = DB.orders.stats();
+  const orders = DB.orders.getAll().filter(o => o.status !== 'cancelled');
+  const avg = orders.length ? stats.revenue / orders.length : 0;
+  animateCount('s-total-rev',  stats.revenue,       true);
+  animateCount('s-month-rev',  stats.monthlyRevenue, true);
+  animateCount('s-orders',     stats.total,          false);
+  animateCount('s-avg',        avg,                  true);
+  document.getElementById('s-orders-sub').textContent =
+    `${stats.pending} pending · ${stats.processing} processing`;
+}
+
 function buildInsights(days) {
   const orders  = DB.orders.getAll();
   const cutoff  = new Date(Date.now() - days * 86400000);
@@ -403,14 +720,13 @@ function buildInsights(days) {
   const pending = orders.filter(o => o.status === 'pending').length;
 
   const chips = [
-    { icon: '💵', val: fmtCurrency(revenue), label: `Revenue (${days}d)` },
-    { icon: '📦', val: period.length, label: `Orders (${days}d)` },
+    { icon: '💵', val: fmtCurrency(revenue),  label: `Revenue (${days}d)` },
+    { icon: '📦', val: period.length,          label: `Orders (${days}d)` },
     { icon: '🏆', val: topP ? topP.name : '—', label: 'Best-seller' },
-    { icon: '⏳', val: pending, label: 'Pending orders' },
-    { icon: '⭐', val: DB.reviews.getAll().filter(r => !r.approved).length, label: 'Unreviewed' },
-    { icon: '📧', val: DB.newsletter.getActive().length, label: 'Subscribers' },
+    { icon: '⏳', val: pending,                label: 'Pending orders' },
+    { icon: '⭐', val: DB.reviews.getAll().filter(r=>!r.approved).length, label: 'Unreviewed' },
+    { icon: '📧', val: DB.newsletter.getActive().length,                  label: 'Subscribers' },
   ];
-
   document.getElementById('insight-chips').innerHTML = chips.map(c => `
     <div class="insight-chip">
       <span class="insight-chip-icon">${c.icon}</span>
@@ -418,371 +734,224 @@ function buildInsights(days) {
         <div class="insight-chip-val">${c.val}</div>
         <div class="insight-chip-label">${c.label}</div>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-/* ============================================================
-   REVENUE LINE CHART (main)
-   ============================================================ */
+/* ---- Revenue line chart ---- */
 function buildRevenueChart(days) {
   const data   = DB.analytics.revenueByDay(days);
   const labels = data.map(d => d.label);
   const revs   = data.map(d => d.revenue);
-  const orders = data.map(d => d.orders);
-
-  const periodTotal = revs.reduce((s,v) => s+v, 0);
+  const ords   = data.map(d => d.orders);
+  const periodTotal = revs.reduce((s,v)=>s+v,0);
   document.getElementById('revenue-period-label').textContent = `Last ${days} days`;
   document.getElementById('period-total-badge').textContent   = fmtCurrency(periodTotal) + ' total';
 
-  const ctx = document.getElementById('revenueChart').getContext('2d');
-
-  /* Gradient fill */
-  const grad = ctx.createLinearGradient(0, 0, 0, 320);
-  grad.addColorStop(0,   'rgba(74,222,128,0.35)');
-  grad.addColorStop(0.5, 'rgba(74,222,128,0.1)');
-  grad.addColorStop(1,   'rgba(74,222,128,0)');
-
-  const gradIndigo = ctx.createLinearGradient(0, 0, 0, 320);
-  gradIndigo.addColorStop(0,   'rgba(99,102,241,0.2)');
-  gradIndigo.addColorStop(1,   'rgba(99,102,241,0)');
+  const ctx   = document.getElementById('revenueChart').getContext('2d');
+  const grad  = ctx.createLinearGradient(0,0,0,280);
+  grad.addColorStop(0,'rgba(74,222,128,0.35)');
+  grad.addColorStop(0.5,'rgba(74,222,128,0.1)');
+  grad.addColorStop(1,'rgba(74,222,128,0)');
+  const grad2 = ctx.createLinearGradient(0,0,0,280);
+  grad2.addColorStop(0,'rgba(99,102,241,0.2)');
+  grad2.addColorStop(1,'rgba(99,102,241,0)');
 
   if (revenueChart) revenueChart.destroy();
-
   revenueChart = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Revenue ($)',
-          data: revs,
-          borderColor: COLORS.green,
-          borderWidth: 2.5,
-          pointBackgroundColor: COLORS.green,
-          pointBorderColor: '#13151e',
-          pointBorderWidth: 2,
-          pointRadius: days <= 7 ? 5 : days <= 30 ? 4 : 2,
-          pointHoverRadius: 7,
-          fill: true,
-          backgroundColor: grad,
-          tension: 0.4,
-          yAxisID: 'yRev',
-        },
-        {
-          label: 'Orders',
-          data: orders,
-          borderColor: COLORS.indigo,
-          borderWidth: 2,
-          pointBackgroundColor: COLORS.indigo,
-          pointBorderColor: '#13151e',
-          pointBorderWidth: 2,
-          pointRadius: days <= 7 ? 4 : days <= 30 ? 3 : 1,
-          pointHoverRadius: 6,
-          fill: true,
-          backgroundColor: gradIndigo,
-          tension: 0.4,
-          borderDash: [6, 3],
-          yAxisID: 'yOrders',
-        },
-      ],
-    },
+    data: { labels, datasets: [
+      { label:'Revenue ($)', data:revs, borderColor:COLORS.green, borderWidth:2.5,
+        pointBackgroundColor:COLORS.green, pointBorderColor:'#13151e', pointBorderWidth:2,
+        pointRadius: days<=7?5:days<=30?4:2, pointHoverRadius:7,
+        fill:true, backgroundColor:grad, tension:0.4, yAxisID:'yRev' },
+      { label:'Orders', data:ords, borderColor:COLORS.indigo, borderWidth:2,
+        pointBackgroundColor:COLORS.indigo, pointBorderColor:'#13151e', pointBorderWidth:2,
+        pointRadius: days<=7?4:days<=30?3:1, pointHoverRadius:6,
+        fill:true, backgroundColor:grad2, tension:0.4, borderDash:[6,3], yAxisID:'yOrders' },
+    ]},
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: 'rgba(26,29,46,0.97)',
-          borderColor: 'rgba(255,255,255,0.1)',
-          borderWidth: 1,
-          titleColor: '#e2e8f0',
-          bodyColor: '#8892a4',
-          padding: 14,
-          cornerRadius: 10,
-          callbacks: {
-            label(ctx) {
-              if (ctx.dataset.label === 'Revenue ($)') {
-                return '  Revenue: ' + fmtCurrency(ctx.raw);
-              }
-              return '  Orders: ' + ctx.raw;
-            },
-          },
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(26,29,46,0.97)',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,
+          titleColor:'#e2e8f0',bodyColor:'#8892a4',padding:14,cornerRadius:10,
+          callbacks:{ label(ctx){ return ctx.dataset.label==='Revenue ($)' ? '  Revenue: '+fmtCurrency(ctx.raw) : '  Orders: '+ctx.raw; } },
         },
       },
-      scales: {
-        x: {
-          grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
-          ticks: {
-            maxTicksLimit: days <= 7 ? 7 : days <= 30 ? 10 : 12,
-            font: { size: 11 },
-          },
-        },
-        yRev: {
-          position: 'left',
-          grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-          ticks: {
-            callback: v => '$' + v.toFixed(0),
-            font: { size: 11 },
-          },
-          beginAtZero: true,
-        },
-        yOrders: {
-          position: 'right',
-          grid: { display: false },
-          ticks: {
-            callback: v => Number.isInteger(v) ? v : '',
-            font: { size: 11 },
-          },
-          beginAtZero: true,
-        },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)',drawBorder:false}, ticks:{maxTicksLimit:days<=7?7:10,font:{size:11}} },
+        yRev:{ position:'left', grid:{color:'rgba(255,255,255,0.05)',drawBorder:false}, ticks:{callback:v=>'$'+v.toFixed(0),font:{size:11}}, beginAtZero:true },
+        yOrders:{ position:'right', grid:{display:false}, ticks:{callback:v=>Number.isInteger(v)?v:'',font:{size:11}}, beginAtZero:true },
       },
     },
   });
 }
 
-/* ============================================================
-   STATUS DOUGHNUT CHART
-   ============================================================ */
+/* ---- Status doughnut ---- */
 function buildStatusChart() {
-  const stats = DB.orders.stats();
   const raw = DB.orders.getAll();
-
   const statusCounts = {};
-  raw.forEach(o => {
-    statusCounts[o.status] = (statusCounts[o.status]||0) + 1;
-  });
-
+  raw.forEach(o => { statusCounts[o.status] = (statusCounts[o.status]||0) + 1; });
   const labels = Object.keys(statusCounts);
   const values = labels.map(s => statusCounts[s]);
   const colors = labels.map(s => (STATUS_PALETTE[s]||{color:'#555'}).color);
 
   const ctx = document.getElementById('statusChart').getContext('2d');
   if (statusChart) statusChart.destroy();
-
   statusChart = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: labels.map(s => (STATUS_PALETTE[s]||{label:s}).label),
-      datasets: [{
-        data: values,
-        backgroundColor: colors,
-        borderColor: 'rgba(26,29,46,0.9)',
-        borderWidth: 3,
-        hoverBorderWidth: 2,
-        hoverOffset: 8,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '68%',
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: 'rgba(26,29,46,0.97)',
-          borderColor: 'rgba(255,255,255,0.1)',
-          borderWidth: 1,
-          titleColor: '#e2e8f0',
-          bodyColor: '#8892a4',
-          padding: 12,
-          cornerRadius: 10,
-          callbacks: {
-            label(ctx) {
-              const total = ctx.dataset.data.reduce((s,v)=>s+v,0);
-              const pct = total ? Math.round(ctx.raw/total*100) : 0;
-              return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
-            },
-          },
+    type:'doughnut',
+    data:{ labels:labels.map(s=>(STATUS_PALETTE[s]||{label:s}).label), datasets:[{
+      data:values, backgroundColor:colors, borderColor:'rgba(26,29,46,0.9)', borderWidth:3, hoverOffset:8,
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(26,29,46,0.97)',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,
+          titleColor:'#e2e8f0',bodyColor:'#8892a4',padding:12,cornerRadius:10,
+          callbacks:{ label(ctx){ const t=ctx.dataset.data.reduce((s,v)=>s+v,0); return ` ${ctx.label}: ${ctx.raw} (${t?Math.round(ctx.raw/t*100):0}%)`; } },
         },
       },
     },
   });
-
-  /* Custom legend */
   const total = values.reduce((s,v)=>s+v,0);
   document.getElementById('status-legend').innerHTML = labels.map((s,i) => `
     <div class="legend-item">
       <div class="legend-dot" style="background:${colors[i]};width:10px;height:10px;"></div>
       <span style="color:var(--admin-text);">${(STATUS_PALETTE[s]||{label:s}).label}</span>
       <span style="font-weight:600;color:#fff;">${values[i]}</span>
-      <span style="color:var(--admin-muted);font-size:.68rem;">${total ? Math.round(values[i]/total*100) : 0}%</span>
-    </div>
-  `).join('');
+      <span style="color:var(--admin-muted);font-size:.68rem;">${total?Math.round(values[i]/total*100):0}%</span>
+    </div>`).join('');
 }
 
-/* ============================================================
-   TOP PRODUCTS BAR CHART
-   ============================================================ */
+/* ---- Products bar chart ---- */
 function buildProductsChart() {
   const top = DB.analytics.topProducts(5);
-
   if (!top.length) {
     document.getElementById('productsChart').parentElement.innerHTML =
-      '<div class="empty-state" style="padding:60px 20px;"><div style="font-size:2rem;margin-bottom:8px;">📦</div><h3>No order data yet</h3></div>';
+      '<div style="padding:60px 20px;text-align:center;color:var(--admin-muted);">No order data yet</div>';
     return;
   }
-
-  const labels = top.map(p => p.name.length > 20 ? p.name.substring(0,18)+'…' : p.name);
+  const labels = top.map(p => p.name.length>20 ? p.name.slice(0,18)+'…' : p.name);
   const revs   = top.map(p => p.revenue);
   const qtys   = top.map(p => p.qty);
 
-  const ctx = document.getElementById('productsChart').getContext('2d');
+  const ctx    = document.getElementById('productsChart').getContext('2d');
+  const barG1  = ctx.createLinearGradient(0,0,0,220);
+  barG1.addColorStop(0,'rgba(74,222,128,.9)'); barG1.addColorStop(1,'rgba(34,197,94,.4)');
+  const barG2  = ctx.createLinearGradient(0,0,0,220);
+  barG2.addColorStop(0,'rgba(99,102,241,.7)'); barG2.addColorStop(1,'rgba(99,102,241,.2)');
+
   if (productsChart) productsChart.destroy();
-
-  /* Gradient bars */
-  const barGrad = ctx.createLinearGradient(0, 0, 0, 240);
-  barGrad.addColorStop(0, 'rgba(74,222,128,.9)');
-  barGrad.addColorStop(1, 'rgba(34,197,94,.4)');
-
-  const barGrad2 = ctx.createLinearGradient(0, 0, 0, 240);
-  barGrad2.addColorStop(0, 'rgba(99,102,241,.7)');
-  barGrad2.addColorStop(1, 'rgba(99,102,241,.2)');
-
   productsChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Revenue ($)',
-          data: revs,
-          backgroundColor: barGrad,
-          borderColor: 'rgba(74,222,128,.6)',
-          borderWidth: 1,
-          borderRadius: 6,
-          borderSkipped: false,
-          yAxisID: 'yRev',
-        },
-        {
-          label: 'Units Sold',
-          data: qtys,
-          backgroundColor: barGrad2,
-          borderColor: 'rgba(99,102,241,.5)',
-          borderWidth: 1,
-          borderRadius: 6,
-          borderSkipped: false,
-          yAxisID: 'yQty',
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: 'rgba(26,29,46,0.97)',
-          borderColor: 'rgba(255,255,255,0.1)',
-          borderWidth: 1,
-          titleColor: '#e2e8f0',
-          bodyColor: '#8892a4',
-          padding: 12,
-          cornerRadius: 10,
-          callbacks: {
-            label(ctx) {
-              if (ctx.dataset.label === 'Revenue ($)') return '  Revenue: ' + fmtCurrency(ctx.raw);
-              return '  Units: ' + ctx.raw;
-            },
-          },
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Revenue ($)', data:revs, backgroundColor:barG1, borderColor:'rgba(74,222,128,.6)', borderWidth:1, borderRadius:6, borderSkipped:false, yAxisID:'yRev' },
+      { label:'Units Sold', data:qtys, backgroundColor:barG2, borderColor:'rgba(99,102,241,.5)', borderWidth:1, borderRadius:6, borderSkipped:false, yAxisID:'yQty' },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(26,29,46,0.97)',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,
+          titleColor:'#e2e8f0',bodyColor:'#8892a4',padding:12,cornerRadius:10,
+          callbacks:{ label(ctx){ return ctx.dataset.label==='Revenue ($)' ? '  Revenue: '+fmtCurrency(ctx.raw) : '  Units: '+ctx.raw; } },
         },
       },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { font: { size: 11 } },
-        },
-        yRev: {
-          position: 'left',
-          grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
-          ticks: { callback: v => '$' + v, font: { size: 11 } },
-          beginAtZero: true,
-        },
-        yQty: {
-          position: 'right',
-          grid: { display: false },
-          ticks: { callback: v => Number.isInteger(v) ? v : '', font: { size: 11 } },
-          beginAtZero: true,
-        },
+      scales:{
+        x:{ grid:{display:false}, ticks:{font:{size:11}} },
+        yRev:{ position:'left', grid:{color:'rgba(255,255,255,0.04)',drawBorder:false}, ticks:{callback:v=>'$'+v,font:{size:11}}, beginAtZero:true },
+        yQty:{ position:'right', grid:{display:false}, ticks:{callback:v=>Number.isInteger(v)?v:'',font:{size:11}}, beginAtZero:true },
       },
     },
   });
 }
 
-/* ============================================================
-   TOP PRODUCTS TABLE
-   ============================================================ */
+/* ---- Top products table ---- */
 function buildTopTable() {
-  const top = DB.analytics.topProducts(5);
+  const top   = DB.analytics.topProducts(5);
   const tbody = document.getElementById('top-products-tbody');
-
   if (!top.length) {
     tbody.innerHTML = `<tr><td colspan="5" style="padding:40px;text-align:center;color:var(--admin-muted);">No order data available yet.</td></tr>`;
     return;
   }
-
-  const maxRev = top[0]?.revenue || 1;
-
+  const maxRev = top[0].revenue || 1;
   tbody.innerHTML = top.map((p, i) => {
+    const pct       = Math.round(p.revenue/maxRev*100);
     const rankClass = ['rank-1','rank-2','rank-3','rank-other','rank-other'][i] || 'rank-other';
-    const pct = Math.round((p.revenue / maxRev) * 100);
-    return `
-      <tr>
-        <td><span class="product-rank ${rankClass}">${i+1}</span></td>
-        <td>
-          <div style="font-weight:600;color:#fff;">${escHtml(p.name)}</div>
-          <div style="font-size:.72rem;color:var(--admin-muted);font-family:var(--mono);">ID: ${escHtml(p.id)}</div>
-        </td>
-        <td>
-          <span style="font-weight:600;color:var(--admin-text);">${p.qty}</span>
-          <span style="font-size:.78rem;color:var(--admin-muted);"> units</span>
-        </td>
-        <td>
-          <span style="font-weight:700;color:#fff;font-size:.95rem;">${fmtCurrency(p.revenue)}</span>
-        </td>
-        <td>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div class="rev-bar-wrap">
-              <div class="rev-bar" style="width:${pct}%;"></div>
-            </div>
-            <span style="font-size:.75rem;color:var(--admin-muted);min-width:30px;">${pct}%</span>
-          </div>
-        </td>
-      </tr>
-    `;
+    return `<tr>
+      <td><span class="product-rank ${rankClass}">${i+1}</span></td>
+      <td>
+        <div style="font-weight:600;color:#fff;">${escHtml(p.name)}</div>
+        <div style="font-size:.72rem;color:var(--admin-muted);font-family:var(--mono);">ID: ${escHtml(p.id)}</div>
+      </td>
+      <td><span style="font-weight:600;color:var(--admin-text);">${p.qty}</span> <span style="font-size:.78rem;color:var(--admin-muted);">units</span></td>
+      <td><span style="font-weight:700;color:#fff;font-size:.95rem;">${fmtCurrency(p.revenue)}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="rev-bar-wrap"><div class="rev-bar" style="width:${pct}%;"></div></div>
+          <span style="font-size:.75rem;color:var(--admin-muted);min-width:30px;">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
   }).join('');
+}
+
+/* ============================================================
+   SHARED HELPERS
+   ============================================================ */
+function animateCount(id, target, isCurrency) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const duration  = 900;
+  const startTime = performance.now();
+  function step(now) {
+    const p = Math.min((now - startTime) / duration, 1);
+    const e = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+    el.textContent = isCurrency ? fmtCurrency(target * e) : Math.round(target * e).toLocaleString();
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function fmtCurrency(v) { return '$' + Number(v||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 /* ============================================================
    EXPORT
    ============================================================ */
-function exportReport() {
+async function exportReport() {
   const stats = DB.orders.stats();
   const top   = DB.analytics.topProducts(10);
   const data  = DB.analytics.revenueByDay(currentDays);
-
-  let csv = `Buy Alchimia Analytics Export\n`;
-  csv += `Generated: ${new Date().toLocaleString()}\nPeriod: ${currentDays} days\n\n`;
-
-  csv += `SUMMARY\nTotal Revenue,${fmtCurrency(stats.revenue)}\nMonthly Revenue,${fmtCurrency(stats.monthlyRevenue)}\nTotal Orders,${stats.total}\n\n`;
-
+  let csv = `Buy Alchimia Analytics Export\nGenerated: ${new Date().toLocaleString()}\nPeriod: ${currentDays} days\n\n`;
+  csv += `ORDER SUMMARY\nTotal Revenue,${fmtCurrency(stats.revenue)}\nMonthly Revenue,${fmtCurrency(stats.monthlyRevenue)}\nTotal Orders,${stats.total}\n\n`;
   csv += `REVENUE BY DAY\nDate,Revenue,Orders\n`;
   data.forEach(d => { csv += `${d.label},${d.revenue.toFixed(2)},${d.orders}\n`; });
-
   csv += `\nTOP PRODUCTS\nProduct,Units,Revenue\n`;
   top.forEach(p => { csv += `"${p.name}",${p.qty},${p.revenue.toFixed(2)}\n`; });
+
+  try {
+    const res  = await fetch(`/api/analytics/stats?days=${currentDays}`);
+    const traf = await res.json();
+    csv += `\nTRAFFIC SUMMARY\nTotal Page Views,${traf.totalViews}\nToday's Views,${traf.todayViews}\nClick Events,${traf.totalEvents}\n\n`;
+    csv += `TOP PAGES\nPage,Views\n`;
+    traf.topPages.forEach(p => { csv += `"${p.page}",${p.count}\n`; });
+    csv += `\nTOP CLICKS\nAction,Count\n`;
+    traf.topClicks.forEach(c => { csv += `"${c.action}",${c.count}\n`; });
+  } catch (_) {}
 
   downloadCSV(csv, `alchimia-analytics-${currentDays}d-${new Date().toISOString().slice(0,10)}.csv`);
   adminToast('Analytics report exported.', 'success');
 }
-
-/* ---- Helpers ---- */
-function escHtml(str) {
-  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 </script>
-
 </body>
 </html>

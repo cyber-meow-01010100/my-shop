@@ -1,0 +1,3 @@
+# This file keeps the uploads directory tracked by Git.
+# Actual uploaded files are excluded via .gitignore.
+# At runtime, product images are served from this directory.

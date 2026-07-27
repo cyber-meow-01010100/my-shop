@@ -1,7 +1,7 @@
 [
   {
     "id": "p2117c87990034b",
-    "name": "Cyelon Cinnamon",
+    "name": "Ceylon Cinnamon",
     "category": "Spices",
     "sku": "001",
     "price": 10,
@@ -24,7 +24,7 @@
   },
   {
     "id": "p0b36cdda223946",
-    "name": "Cyelon Black Tea",
+    "name": "Ceylon Black Tea",
     "category": "Tea",
     "sku": "002",
     "price": 12,
@@ -47,7 +47,7 @@
   },
   {
     "id": "p29b71ab5b67641",
-    "name": "Cyelon Coffe",
+    "name": "Ceylon Coffe",
     "category": "Coffee",
     "sku": "003",
     "price": 10,
@@ -90,5 +90,97 @@
     ],
     "icon": "leafBottle",
     "createdAt": "2026-07-26T14:11:19.169Z"
+  },
+  {
+    "id": "pb212356bdaaf4f",
+    "name": "Organic Ghee",
+    "category": "Essential Oils",
+    "sku": "004",
+    "price": 30,
+    "discount_price": 50,
+    "stock": 543,
+    "unit": "250ml",
+    "origin": "kandy",
+    "description": "Ceylon Product",
+    "details": "",
+    "tags": [],
+    "featured": true,
+    "new_arrival": false,
+    "best_seller": false,
+    "active": true,
+    "images": [
+      "/uploads/ca3d626d-e9e7-4c8d-9191-1a0e8045217d.jpeg"
+    ],
+    "icon": "leafBottle",
+    "createdAt": "2026-07-27T07:17:20.236Z"
+  },
+  {
+    "id": "p3b9a3a2cf3bd44",
+    "name": "Cinnamon Leaves",
+    "category": "Spices",
+    "sku": "005",
+    "price": 8,
+    "discount_price": null,
+    "stock": 7000,
+    "unit": "20",
+    "origin": "sri lanka",
+    "description": "",
+    "details": "",
+    "tags": [],
+    "featured": false,
+    "new_arrival": false,
+    "best_seller": false,
+    "active": true,
+    "images": [
+      "/uploads/a2989ddc-b472-4a63-8600-f424acad806d.jpeg"
+    ],
+    "icon": "leafBottle",
+    "createdAt": "2026-07-27T07:34:34.396Z"
+  },
+  {
+    "id": "pe15157548da34c",
+    "name": "Moringa Tea",
+    "category": "Herbal Tea",
+    "sku": "006",
+    "price": 14,
+    "discount_price": 16,
+    "stock": 789,
+    "unit": "100g",
+    "origin": "sri lanka",
+    "description": "",
+    "details": "",
+    "tags": [],
+    "featured": false,
+    "new_arrival": false,
+    "best_seller": false,
+    "active": true,
+    "images": [
+      "/uploads/f5d8b915-8231-41e7-a4ea-fe57d1be3c7b.jpeg"
+    ],
+    "icon": "leafBottle",
+    "createdAt": "2026-07-27T07:42:45.593Z"
+  },
+  {
+    "id": "p57241c0bcdd742",
+    "name": "Black Peper",
+    "category": "Spices",
+    "sku": "006",
+    "price": 20,
+    "discount_price": 31,
+    "stock": 675,
+    "unit": "250g",
+    "origin": "sri lanka",
+    "description": "",
+    "details": "",
+    "tags": [],
+    "featured": false,
+    "new_arrival": false,
+    "best_seller": false,
+    "active": true,
+    "images": [
+      "/uploads/3df288a3-99b3-4ce8-82ef-4db948f7b428.jpeg"
+    ],
+    "icon": "leafBottle",
+    "createdAt": "2026-07-27T07:49:29.028Z"
   }
 ]
