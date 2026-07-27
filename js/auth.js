@@ -108,6 +108,8 @@ async function handleGoogleCredential(response) {
 }
 
 // Render the Google Sign-In button inside the given container element ID.
+// initialize() is called only once; subsequent calls just render the button.
+let _gsiInitialized = false;
 function initGoogleSignIn(containerId) {
   const clientId = window.ALCHIMIA_CONFIG && window.ALCHIMIA_CONFIG.GOOGLE_CLIENT_ID;
   const container = document.getElementById(containerId);
@@ -120,10 +122,13 @@ function initGoogleSignIn(containerId) {
 
   const tryRender = () => {
     if (!window.google || !window.google.accounts) return setTimeout(tryRender, 150);
-    google.accounts.id.initialize({
-      client_id: clientId,
-      callback: handleGoogleCredential
-    });
+    if (!_gsiInitialized) {
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredential
+      });
+      _gsiInitialized = true;
+    }
     google.accounts.id.renderButton(container, {
       theme: 'outline',
       size: 'large',
