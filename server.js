@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // ---- Paths ----
 const DATA_DIR       = path.join(__dirname, 'data');
